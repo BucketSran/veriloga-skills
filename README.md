@@ -20,6 +20,7 @@ Working examples that follow all Verilog-A guidelines:
 - **shift_register.va** - 4-bit shift register demonstrating data shifting
 - **buffer.va** - Simple buffer with supply voltage tracking
 - **edge_detector.va** - Rising and falling edge detection patterns
+- **state_machine_example.va** - Complete state machine with multiple outputs and comprehensive documentation
 
 ### ❌ Incorrect Examples (`examples/incorrect/`)
 
