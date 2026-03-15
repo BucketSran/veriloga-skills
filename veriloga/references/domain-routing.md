@@ -2,8 +2,9 @@
 
 Route Verilog-A modules to the correct simulator based on domain classification.
 
-> **Source of truth:** `evas-capabilities.manifest` defines EVAS supported/unsupported constructs.
-> SKILL.md § Domain Classification has the complete construct→domain mapping and decision tree.
+> **Source of truth:** EVAS manifest from `https://github.com/Arcadia-1/EVAS`.
+> Obtain per SKILL.md § Domain Classification (CLI → GitHub raw → local cache).
+> Local cache: `evas-capabilities.manifest` in this directory.
 
 ---
 

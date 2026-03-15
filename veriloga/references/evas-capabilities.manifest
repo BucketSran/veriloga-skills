@@ -1,18 +1,14 @@
-# EVAS Capability Manifest
+# EVAS Capability Manifest — LOCAL CACHE
 #
-# This file is the SINGLE SOURCE OF TRUTH for what the EVAS voltage-domain
-# simulator supports. The veriloga skill reads this file to build its domain
-# classification decision tree and simulation routing logic.
+# This is a cached copy. The source of truth is in the EVAS repo:
+# https://github.com/Arcadia-1/EVAS/blob/main/evas-capabilities.manifest
 #
-# EVAS is an event-driven voltage-domain simulator. It does NOT solve KCL
-# equations — it will NEVER support current contributions or continuous-time
-# analog operators. The [unsupported] list below reflects permanent architectural
-# boundaries, not missing features.
+# Sync priority (SKILL.md § Domain Classification):
+# 1. evas --capabilities (if CLI installed)
+# 2. https://raw.githubusercontent.com/Arcadia-1/EVAS/main/evas-capabilities.manifest
+# 3. This file (fallback)
 #
-# Maintenance: update [supported] if EVAS adds new voltage-domain constructs
-# (e.g., new system functions). The [unsupported] list should not change.
-#
-# Format: one construct per line. Lines starting with # are comments.
+# If fetched successfully, overwrite this file with the latest version.
 
 [supported]
 V() <+

@@ -317,12 +317,14 @@ Scan the `analog begin` block to classify the module's domain.
 ### Construct → Domain
 
 **Voltage-domain** (event-driven — EVAS):
-`V() <+`, `transition()`, `@(cross)`, `@(above)`, `@(timer)`, `@(initial_step)`,
-`@(final_step)`, `genvar`, arrays, `case`, `$abstime`, `$bound_step()`,
-`$display`/`$strobe`/`$finish`, `$fopen`/`$fstrobe`/`$fclose`, `$random()`,
-`last_crossing()`, `analysis()`
+Read from EVAS manifest for the latest list. Obtain manifest in order:
+1. EVAS CLI: `evas --capabilities` (if installed)
+2. GitHub: `https://raw.githubusercontent.com/Arcadia-1/EVAS/main/evas-capabilities.manifest`
+3. Local cache: `references/evas-capabilities.manifest`
 
-**Current-domain** (KCL solver — OpenVAF + ngspice):
+If fetched successfully, update the local cache.
+
+**Current-domain** (KCL solver — OpenVAF + ngspice) — these are permanent, won't change:
 `I() <+`, `V(a,b) <+ I(a,b)*R`, `ddt()`, `idt()`, `idtmod()`, `laplace_nd()`,
 `limexp()`, `slew()`, `$vt`/`$temperature`, `flicker_noise()`, `white_noise()`,
 `branch`, `nature`/`discipline`
@@ -347,8 +349,10 @@ Scan the `analog begin` block to classify the module's domain.
 
 ## Simulation Routing
 
-See `references/domain-routing.md` for full details. EVAS capabilities declared in
-`references/evas-capabilities.manifest` (single source of truth).
+See `references/domain-routing.md` for full details.
+
+EVAS capabilities: fetch manifest per § Domain Classification above.
+Local cache: `references/evas-capabilities.manifest`.
 
 - **Voltage-domain** → ready for EVAS as-is
 - **Current-domain** → delegate to `openvaf` skill
