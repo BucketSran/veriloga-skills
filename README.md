@@ -53,10 +53,6 @@ Teaches agents to compile Verilog-A modules with OpenVAF and simulate them via n
 
 **Install:** Point your agent at `openvaf/SKILL.md`.
 
-## Other Docs
-
-- [Agent Skill Format](./agent-skill-format.md) — General template for documenting any agent skill
-
 ## License
 
 This repository is intended for educational and reference purposes.
