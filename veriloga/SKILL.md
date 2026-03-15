@@ -320,6 +320,64 @@ V(CLKOUT) <+ transition((clk_delayed > 0.5) ? vh : vl, 0, tr, tr);
 
 Common use cases: non-overlapping clock generation, pulse-width extension, gated clocks.
 
+### `analog` single-line (no `begin/end`)
+
+When a module has only one contribution statement, `analog begin ... end` can be replaced
+with a single `analog` statement:
+```
+module adder (input electrical sigin1, input electrical sigin2, output electrical sigout);
+parameter real k1 = 1;
+parameter real k2 = 1;
+
+    analog
+        V(sigout) <+ k1 * V(sigin1) + k2 * V(sigin2);
+
+endmodule
+```
+
+Common use cases: ideal adders, buffers, gain stages, voltage sources — any pure combinational
+analog block with a single output expression.
+
+### `generate` compile-time loop
+
+`generate` unrolls at compile time, unlike `for` which runs at simulation time.
+Use `generate` when each iteration must create a distinct instance (e.g., per-bit
+mismatch with different random seeds):
+```
+generate j (0, 7) begin
+    iseed = j;
+    comp_var[j] = 1.0 + mismatch * abs($random(iseed));
+end
+```
+
+Note: `generate` uses its own loop variable (not `genvar`), declared implicitly.
+
+### `$random()` for mismatch modeling
+
+`$random(seed)` returns a random integer. Use with a per-instance seed for
+Monte Carlo mismatch:
+```
+`define MAXINT 2_147_483_647.0
+
+real r1;
+r1 = abs($random(seed) / `MAXINT);   // uniform [0, 1]
+cap = cap_nominal * (1.0 + r1 * mismatch);
+```
+
+Common use cases: capacitor mismatch, comparator offset, DAC weight errors.
+
+### Parameterized macros (`` `define `` with arguments)
+
+`` `define `` macros can take arguments for reusable expressions:
+```
+`define FRAC_MM(I) (1.0 + mismatch * abs($random(I) / `MAXINT))
+
+comp_var[0] = `FRAC_MM(seed0);
+comp_var[1] = `FRAC_MM(seed1);
+```
+
+Use `` `undef MACRO_NAME `` at the end of the module to avoid leaking macros to other files.
+
 ---
 
 ## Domain Classification
