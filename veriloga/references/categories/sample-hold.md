@@ -52,30 +52,7 @@ Samples on falling edge (bottom-plate opens first to cancel charge injection):
 
 ## Bootstrap Switch
 
-Models a clock-boosted switch for high-linearity sampling:
-
-```
-parameter real tde = 50e-12;
-parameter real tdc = 50e-12;
-
-real state;
-
-analog begin
-    vh = V(VDD); vl = V(VSS);
-    vth = (vh + vl) / 2.0;
-
-    @(initial_step)
-        state = 0.0;
-
-    @(cross(V(CLK) - vth, +1))
-        state = V(VIN) + vh;           // boosted gate voltage
-
-    @(cross(V(CLK) - vth, -1))
-        state = 0.0;                   // switch off
-
-    V(clkbs) <+ transition(state, tde, tdc);
-end
-```
+See `power-switch.md` § Bootstrap Switch Driver for the clock-boosted switch pattern.
 
 ## Design Notes
 

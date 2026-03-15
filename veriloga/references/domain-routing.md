@@ -1,132 +1,82 @@
 # Domain Routing
 
-How to route a Verilog-A module to the correct simulator based on its domain classification.
+Route Verilog-A modules to the correct simulator based on domain classification.
 
-> **Capability source of truth:** `references/evas-capabilities.manifest`
-> Read that file first — it defines exactly which constructs the voltage-domain simulator
-> (EVAS) currently supports. The lists below are derived from it. If they conflict,
-> the manifest wins.
+> **Source of truth:** `evas-capabilities.manifest` defines EVAS supported/unsupported constructs.
+> SKILL.md § Domain Classification has the complete construct→domain mapping and decision tree.
 
 ---
 
-## Voltage-Domain Simulator (EVAS)
+## Voltage-Domain (EVAS)
 
-**Repository:** https://evas.tokenzhang.com/
-**Status:** In development — capabilities may change between syncs.
+**Site:** https://evas.tokenzhang.com/
+**Status:** In development.
 
-The EVAS simulator's supported and unsupported constructs are declared in
-`references/evas-capabilities.manifest`. Read that file to get the current list.
-Do NOT rely on the summary below if the manifest has been updated more recently.
+Supported/unsupported constructs: read `evas-capabilities.manifest`.
 
-**Supported constructs (snapshot):** `V() <+`, `@(cross())`, `transition()`, `genvar`,
-arrays, `@(initial_step)`, `$abstime`, `$bound_step()`, `$fopen`/`$fdisplay`/`$fclose`.
+### Pre-flight Checklist
 
-**Not supported (snapshot):** `I() <+`, `ddt()`, `idt()`, `idtmod()`, `laplace_nd()`,
-`laplace_zp()`, `flicker_noise()`, `white_noise()`, KCL-based solving.
-
-### Module Preparation Checklist
-
-Before sending a module to EVAS, verify against the manifest's `[unsupported]` section:
-
-1. No constructs from the `[unsupported]` list appear in the module
+1. No constructs from manifest `[unsupported]` appear in the module
 2. All outputs use `V(node) <+ transition(...)` or `V(node) <+ expression`
-3. Edge detection uses `@(cross(...))` with explicit direction (`+1` or `-1`)
-4. All state is initialized in `@(initial_step)`
+3. Edge detection uses `@(cross(...))` with explicit direction
+4. All state initialized in `@(initial_step)`
 
 ### Invocation
 
-EVAS CLI interface is under development. Check `references/customize.md` for the
-configured `voltage_simulator_cmd`. If not configured, inform the user that the module
-is voltage-domain and ready for EVAS once its CLI is available.
+Check `customize.md` for `voltage_simulator_cmd`. If not configured, report
+the module as EVAS-compatible pending CLI availability.
 
 ---
 
 ## Current-Domain (OpenVAF + ngspice)
 
-**Supported constructs:** `I() <+`, `V() <+` (as voltage source), `ddt()`, `idt()`,
-`idtmod()`, `laplace_nd()`, `laplace_zp()`, `flicker_noise()`, `white_noise()`,
-`$bound_step()`, `$temperature`, `$vt`.
+Delegate to the `openvaf` companion skill:
+1. **Compile:** `openvaf file.va` → `.osdi`
+2. **Load:** ngspice loads OSDI at startup
+3. **Simulate:** DC, AC, tran, noise
 
-**Not supported:** `@(cross())`, `transition()`, `genvar`, arrays, `@(initial_step)`,
-`$abstime`, `$fopen`/`$fdisplay`/`$fclose`.
+### Voltage→Current Adaptation Checklist
 
-### Delegation to openvaf Skill
-
-Current-domain modules are compiled and simulated via the `openvaf` companion skill.
-The workflow is:
-
-1. **Compile:** OpenVAF compiles the `.va` file into an OSDI shared library
-2. **Load:** ngspice loads the OSDI library at startup
-3. **Simulate:** Standard SPICE simulation (DC, AC, tran, noise)
-
-### Adaptation Checklist
-
-If a module was originally written with voltage-domain constructs and needs to be
-converted to current-domain:
-
-1. Replace `@(cross(...))` edge detection with continuous-time threshold comparisons
-2. Replace `transition()` output smoothing with `ddt()`-based slew limiting or
-   `tanh()`-based smooth switching
-3. Replace `genvar` loops with unrolled statements or parameter-computed expressions
-4. Replace array indexing with explicit variable naming
-5. Move initialization from `@(initial_step)` to parameter-based initial conditions
+If converting a voltage-domain module to current-domain:
+1. `@(cross())` → continuous-time threshold comparisons
+2. `transition()` → `tanh()`-based smooth switching or `ddt()`-based slew
+3. `genvar` loops → unrolled statements
+4. Array indexing → explicit variable naming
+5. `@(initial_step)` → parameter-based initial conditions
 
 ---
 
 ## Mixed Domain — Reject and Split
 
-A module that contains **both** voltage-domain constructs (from the manifest's
-`[supported]` list that are NOT in OpenVAF's supported set) **and** current-domain
-constructs (`I() <+`, `ddt()`, `laplace_nd()`) cannot run on either simulator.
-Do NOT attempt simulation.
+Module contains both voltage-only (`@(cross)`, `transition`) and current-only
+(`I() <+`, `ddt()`) constructs → cannot run on either simulator.
 
-### How to Identify the Split Boundary
+### Split Strategy
 
-1. **Find the interface signals** — which nodes carry information between the two domains?
-2. **Draw the boundary** — voltage-domain logic on one side, current-domain analog on the other
-3. **Define the interface** — the boundary becomes port connections between the two sub-modules
+Create two `.va` files:
+- **Sub-module A (voltage):** `@(cross())`, `transition()`, FSMs, counters → `V(node) <+ transition(...)` outputs
+- **Sub-module B (current):** `I() <+`, `ddt()`, `laplace_nd()` → reads `V(node)` inputs
 
-### Splitting Strategy
-
-Create two separate `.va` files:
-
-- **Sub-module A (voltage-domain):** Contains all `@(cross())`, `transition()`, state machines,
-  counters, digital logic. Outputs digital control signals via `V(node) <+ transition(...)`.
-- **Sub-module B (current-domain):** Contains all `I() <+`, `ddt()`, `laplace_nd()` constructs.
-  Reads control signals as `V(node)` inputs.
-
-### Common Split Examples
-
-| Original Module | Voltage-Domain Sub-module | Current-Domain Sub-module |
+| Original | Voltage Sub-module | Current Sub-module |
 |---|---|---|
-| Charge pump (PFD + current source) | PFD: edge detection, UP/DOWN pulses | CP core: `I() <+` current steering |
-| LDO (digital controller + analog regulator) | Controller: comparator, FSM, trim logic | Regulator: error amp, pass device, `laplace_nd()` loop |
-| SAR ADC (logic + CDAC) | SAR logic: bit-cycling FSM, comparator interface | CDAC: charge redistribution via `I() <+ ddt(C*V)` |
-| VCO with digital divider | Divider: counter, modulus control | VCO core: `idtmod()` phase, `I() <+` tank |
+| Charge pump + PFD | PFD: edge detection, UP/DOWN | CP: `I() <+` current steering |
+| LDO + digital controller | Controller: FSM, trim logic | Regulator: `laplace_nd()` loop |
+| SAR ADC + CDAC | SAR logic: bit-cycling FSM | CDAC: `I() <+ ddt(C*V)` |
+| VCO + digital divider | Divider: counter, modulus | VCO: `idtmod()`, `I() <+` tank |
 
 ### Interface Conventions
 
-When splitting a module:
-
-- Use simple `V(node)` signals at the boundary (no `I() <+` across the interface)
-- The voltage-domain sub-module drives digital signals with `transition()`
-- The current-domain sub-module reads those signals as continuous `V(node)` inputs
-- Document the interface in both sub-module headers with matching port names
+- Use `V(node)` signals at boundary (no `I() <+` across interface)
+- Voltage sub-module drives with `transition()`, current sub-module reads as `V(node)`
+- Document interface in both sub-module headers
 
 ---
 
-## Syncing with EVAS Development
+## Syncing with EVAS
 
-EVAS is an event-driven voltage-domain simulator. Its `[unsupported]` constructs
-(`I() <+`, `ddt()`, `idt()`, etc.) are **permanent architectural exclusions** — EVAS
-will never add KCL-based solving. The `[unsupported]` list in the manifest should not
-change.
+EVAS `[unsupported]` constructs (`I() <+`, `ddt()`, `idt()`) are **permanent
+architectural exclusions** — EVAS will never add KCL solving.
 
-What may change as EVAS develops:
-
-1. **New voltage-domain constructs** — if EVAS adds support for a new system function
-   or behavioral construct, add it to `[supported]` in the manifest.
-2. **CLI interface** — update `voltage_simulator_cmd` in `customize.md` when the EVAS
-   CLI stabilizes. Change `evas_status` from `in-development` to `ready`.
-3. **Bug fixes in construct support** — if EVAS tightens or loosens how it handles an
-   existing `[supported]` construct, update the Module Preparation Checklist above.
+What may change:
+1. New `[supported]` constructs → update manifest
+2. CLI stabilization → update `voltage_simulator_cmd` in `customize.md`, set `evas_status: ready`
