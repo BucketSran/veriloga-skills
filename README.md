@@ -31,7 +31,7 @@
 |---|------|------|
 | 1 | 所有信号用 `electrical` 类型 | 不用 `wire` / `logic` / `reg` |
 | 2 | 电源端口用 `inout` | VDD/VSS 声明为 `inout`，不是 `input` |
-| 3 | 从端口读取电源电压 | 用 `V(VDD)` / `V(VSS)`，不要硬编码 `1.8` |
+| 3 | 电源电压不硬编码 | 用 `V(VDD)` 从端口读取，或用 `parameter real vdd = 1.8` 参数化 |
 | 4 | 所有变量在模块级声明 | 不能在 `analog begin` 内部声明 |
 | 5 | 循环变量用 `genvar` | 不用 `integer` |
 | 6 | 状态变量在 `@(initial_step)` 中初始化 | 不依赖默认值 |
