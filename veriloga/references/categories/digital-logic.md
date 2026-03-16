@@ -12,6 +12,7 @@ Patterns for gates, flip-flops, latches, MUX, decoders, encoders, counters, shif
 | **Counter** | `in: clk_i, rst_i` → `out: [N:0] count_o` |
 | **MUX** | `in: [N:0] din, sel_i` → `out: vout` |
 | **Decoder** | `in: [M:0] addr_i` → `out: [N:0] sel_o` |
+| **Encoder (binary)** | `param: din (integer, 0..2^N-1)` → `out: [N-1:0] out` |
 | All blocks | `inout: VDD, VSS` |
 
 ## Typical Parameters
@@ -153,6 +154,44 @@ analog begin
     V(done_o) <+ transition((state == S_DONE) ? vh : vl, tdel, trise, tfall);
 end
 ```
+
+## Static Binary Encoder
+
+Parameter-only input (no signal ports for data). Use `real` variables for computed voltages so
+assignments are stable in the bare `analog begin` block — no `@(initial_step)` needed.
+
+```verilog
+`include "constants.vams"
+`include "disciplines.vams"
+
+module param_encoder_3bit(out);
+    output [2:0] out;
+    electrical  [2:0] out;
+
+    parameter integer din   = 0;   // encoded value (0..7)
+    parameter real    vhigh = 1.0;
+    parameter real    vlow  = 0.0;
+    parameter real    trise = 1n;
+    parameter real    tfall = 1n;
+
+    real vout0, vout1, vout2;
+
+    analog begin
+        vout0 = (din & 1) ? vhigh : vlow;
+        vout1 = (din & 2) ? vhigh : vlow;
+        vout2 = (din & 4) ? vhigh : vlow;
+
+        V(out[0]) <+ transition(vout0, 0, trise, tfall);
+        V(out[1]) <+ transition(vout1, 0, trise, tfall);
+        V(out[2]) <+ transition(vout2, 0, trise, tfall);
+    end
+endmodule
+```
+
+Key points:
+- `real` (not `integer`) for computed voltage values — stable across timesteps without events
+- Bitwise AND on integer parameter selects each output bit
+- `transition()` on each bus element drives clean digital edges
 
 ## Design Notes
 

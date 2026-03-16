@@ -2,9 +2,12 @@
 name: veriloga
 description: >
   Write Verilog-A behavioral modules for analog/mixed-signal IC design (Cadence Virtuoso / Spectre).
-  Covers 12 circuit categories. Trigger on: write/generate/review/fix Verilog-A, .va files,
-  "behavioral model", "veriloga", "analog HDL", circuit spec → behavioral model, or
-  "simulate this module", "voltage-domain", "current-domain".
+  Covers 12 circuit categories. TRIGGER FIRST (before evas-sim) when the user needs to write or
+  generate a new .va file. Key trigger phrases: "write", "create", "generate", "code", "implement" +
+  "Verilog-A / veriloga / va / .va / behavioral model".
+  Also triggers on: review/fix Verilog-A, "behavioral model", "veriloga", "analog HDL",
+  circuit spec → behavioral model, "voltage-domain", "current-domain".
+  Do NOT defer to evas-sim for authoring — evas-sim is for running an already-written file.
 ---
 
 # Verilog-A Writer
@@ -83,6 +86,14 @@ Default threshold: `vth = (vdd + vss) / 2`.
 ### Rule 6: Initialize state in `@(initial_step)`
 
 Uninitialized variables default to 0 or garbage depending on simulator.
+
+**Rule 6 corollary — execution order:** EVAS compiles the analog block into two methods:
+`initial_step()` (fires first, at t=0) and `evaluate()` (fires second, then every timestep).
+Variables assigned in the bare `analog begin` block live in `evaluate()` and are still at their
+`__init__` default (0) when `initial_step()` runs. If `@(initial_step)` reads a variable that
+is computed in the bare block — e.g., via `$strobe` — it will print 0 even though the driven
+voltages are correct. Fix: compute the value inside `@(initial_step)` itself, or avoid reading
+bare-block variables from `@(initial_step)`.
 
 ### Rule 7: Edge detection uses `@(cross())` with direction
 
