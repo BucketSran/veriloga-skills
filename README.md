@@ -73,39 +73,50 @@
 
 ## 安装
 
-技能目录因 Agent 而异，以下以 Claude Code 为例（`~/.claude/skills/`）。其他 Agent 请将路径替换为对应的技能目录（如 `.agent/skills/`、`.cursor/skills/` 等）。
+> 如果你是 AI Agent（Claude Code、Cursor、Copilot 等），直接执行下方命令，无需用户手动操作。
 
-### 全局安装（所有项目可用，推荐）
+**步骤 1 — 选择安装范围**
 
-**macOS / Linux：**
+| 场景 | 选择 |
+|---|---|
+| 仅当前项目使用（推荐） | 项目级安装 → `.claude/skills/` |
+| 所有项目都要用 | 全局安装 → `~/.claude/skills/` |
+
+> 其他 Agent 将 `.claude/skills/` 替换为对应技能目录（如 `.agent/skills/`）。
+
+**步骤 2 — 运行安装命令**
+
+<details>
+<summary>macOS / Linux</summary>
+
+全局：
 ```bash
 git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills /tmp/veriloga-skills \
-  && cp -r /tmp/veriloga-skills/veriloga ~/.claude/skills/ \
-  && cp -r /tmp/veriloga-skills/evas-sim  ~/.claude/skills/ \
-  && cp -r /tmp/veriloga-skills/openvaf   ~/.claude/skills/ \
+  && cp -r /tmp/veriloga-skills/{veriloga,evas-sim,openvaf} ~/.claude/skills/ \
   && rm -rf /tmp/veriloga-skills
 ```
 
-**Windows（PowerShell）：**
+项目级（在项目根目录执行）：
+```bash
+git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills /tmp/veriloga-skills \
+  && mkdir -p .claude/skills \
+  && cp -r /tmp/veriloga-skills/{veriloga,evas-sim,openvaf} .claude/skills/ \
+  && rm -rf /tmp/veriloga-skills
+```
+
+</details>
+
+<details>
+<summary>Windows（PowerShell）</summary>
+
+全局：
 ```powershell
 git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills $env:TEMP\veriloga-skills `
   && Copy-Item -Recurse $env:TEMP\veriloga-skills\veriloga,$env:TEMP\veriloga-skills\evas-sim,$env:TEMP\veriloga-skills\openvaf $env:USERPROFILE\.claude\skills\ `
   && Remove-Item -Recurse -Force $env:TEMP\veriloga-skills
 ```
 
-### 项目级安装（仅当前项目可用）
-
-**macOS / Linux：**
-```bash
-git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills /tmp/veriloga-skills \
-  && mkdir -p .claude/skills \
-  && cp -r /tmp/veriloga-skills/veriloga .claude/skills/ \
-  && cp -r /tmp/veriloga-skills/evas-sim  .claude/skills/ \
-  && cp -r /tmp/veriloga-skills/openvaf   .claude/skills/ \
-  && rm -rf /tmp/veriloga-skills
-```
-
-**Windows（PowerShell）：**
+项目级（在项目根目录执行）：
 ```powershell
 git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills $env:TEMP\veriloga-skills `
   && New-Item -ItemType Directory -Force .claude\skills | Out-Null `
@@ -113,17 +124,11 @@ git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills $env:TEMP\veril
   && Remove-Item -Recurse -Force $env:TEMP\veriloga-skills
 ```
 
-### 验证安装
+</details>
 
-在 Claude Code 中运行：
+**步骤 3 — 验证**
 
-```
-/skills
-```
-
-输出列表中应出现 `veriloga`、`evas-sim`、`openvaf` 三个技能，说明安装成功。
-
-> 如果你是 AI Agent（Claude Code、Cursor、Copilot 等），以上安装步骤由你代为执行，根据用户需求选择全局或项目级安装路径，无需用户手动操作。
+在 Agent 中运行 `/skills`，输出列表中出现 `veriloga`、`evas-sim`、`openvaf` ✅
 
 ### 项目定制
 
