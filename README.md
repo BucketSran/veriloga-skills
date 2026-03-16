@@ -49,7 +49,7 @@
 
 域分类和路由的完整逻辑见 `veriloga/references/domain-routing.md`。
 
-### evas-sim 技能
+### 技能2：evas-sim
 
 处理电压域模块的仿真验证：
 
@@ -59,7 +59,7 @@
 
 覆盖内容：EVAS 安装与配置、仿真命令、波形查看、支持的构造清单、troubleshooting 指南。详见 [`evas-sim/SKILL.md`](./evas-sim/SKILL.md)。
 
-### openvaf 技能
+### 技能3：openvaf 技能
 
 处理电流域模块的编译和仿真：
 
