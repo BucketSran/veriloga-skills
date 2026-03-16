@@ -54,24 +54,22 @@ real-world .va files plus a 171-module reference library (14,311 LOC).
 
 ---
 
-## ⚠️ Critical Distinction: Modules vs. Testbenches
+## Scope: This Skill Writes DUT Modules Only
 
-**This skill writes behavioral MODULES (`.va` files), not testbenches.**
+**This skill only writes the DUT (Device Under Test) — the Verilog-A behavioral module.**
 
-| Artifact | File Type | Where | Purpose |
+To simulate, you need a testbench. That is a separate concern handled by the `evas-sim` skill.
+
+| Step | What | File | Skill |
 |---|---|---|---|
-| **Behavioral Module** | `.va` | This skill | Verilog-A code implementing circuit behavior |
-| **Testbench** | `.scs` | Spectre netlist | Instantiates module + provides stimulus + measures outputs |
-| **Measurement Helper** | `.va` | Reusable module | Probe, DAC reconstructor, error monitor (see `measurement-helpers.md`) |
+| 1 | Write behavioral module | `.va` | **this skill** |
+| 2 | Write testbench + run simulation | `.scs` | **`evas-sim`** |
 
-**DO NOT create `tb_*.va` files.** Testbenches are `.scs` files with:
-- `include "your_module.va"`
-- Voltage/current sources (stimulus)
-- Module instantiation
-- `.tran` / `.ac` / `.dc` analysis commands
-- `meas` (measurement) statements
+**Correct naming convention:**
+- DUT: `sar_adc.va`, `comparator.va`, `dac_8b.va` — behavioral module, no `tb_` prefix
+- Testbench: `tb_sar_adc.scs`, `tb_comparator.scs` — `.scs` netlist, `tb_` prefix here
 
-See `references/categories/testbench-spectre.md` for how to write `.scs` files.
+**NEVER create `tb_*.va`.** See `evas-sim/SKILL.md` for testbench structure and simulation workflow.
 
 ---
 

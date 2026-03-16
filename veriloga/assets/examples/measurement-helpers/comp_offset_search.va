@@ -1,9 +1,9 @@
-// VerilogA for RHSAR28T, tb_COMP_OFFSET, veriloga
+// VerilogA for RHSAR28T, comp_offset_search, veriloga
 
 `include "constants.vams"
 `include "disciplines.vams"
 
-module tb_comp_offset (CLK, VOUT, VINP, VINN);
+module comp_offset_search (CLK, VOUT, VINP, VINN);
 
 input  CLK, VOUT;
 output VINP, VINN;
