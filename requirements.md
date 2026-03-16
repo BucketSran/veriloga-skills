@@ -18,7 +18,7 @@ pip install evas
 
 | 工具 | 用途 | 获取方式 |
 |------|------|----------|
-| [EVAS](https://evas.tokenzhang.com/) | 事件驱动 Verilog-A 仿真器 | `pip install evas` |
+| [EVAS](https://evas.tokenzhang.com/) | 事件驱动 Verilog-A 仿真器 | `pip install evas-sim` |
 | **evas-sim 技能** | Agent 驱动 EVAS 仿真的完整指令 | 本项目 `evas-sim/SKILL.md` |
 
 ### 电流域验证 — OpenVAF + ngspice
