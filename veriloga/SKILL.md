@@ -17,16 +17,40 @@ real-world .va files plus a 171-module reference library (14,311 LOC).
 
 ## How to Use This Skill
 
+**Core workflow:**
+
 1. **Identify the circuit category** → see Category Index
-2. **Read the category reference** in `references/categories/`
-3. **Apply all mandatory rules** below
-4. **Start from template** `assets/template.va`
-5. **Check customization** `references/customize.md` for project overrides
-6. **Classify domain** → scan code for voltage vs current constructs (see Domain Classification)
-7. **Route to simulator** (optional) → EVAS for voltage-domain, openvaf for current-domain
-8. **Verify** (optional) → smoke test on the appropriate simulator (see Smoke Test)
-9. **Explain usage** → list every port (direction, what to connect) and key parameters
-10. **Learn conventions** → if user comments on style, ask to save to `references/customize.md`
+2. **Apply all mandatory rules** below
+3. **Start from template** `assets/template.va`
+4. **Classify domain** → scan code for voltage vs current constructs (see Domain Classification)
+5. **Verify** (optional) → smoke test on the appropriate simulator (see Smoke Test)
+6. **Explain usage** → list every port (direction, what to connect) and key parameters
+
+**Need guidance? Search these resources:**
+
+- **Category-specific patterns** → `references/categories/adc-sar.md`, `comparator.md`, etc.
+- **Project overrides** (naming, supply voltage, headers) → `references/customize.md`
+- **Domain classification help** → `references/domain-routing.md`
+- **EVAS simulator support check** → `references/evas-capabilities.manifest`
+- **ADC behavioral verification** → `references/adc-testbench-guide.md` + `assets/examples/adc-verification/`
+- **Advanced syntax** (string parsing, current-domain functions, conditional compilation) → `references/verilog-a-advanced.md`
+- **Working examples** → `assets/examples/`
+
+---
+
+## Reference File Guide
+
+**When you need help with a specific task:**
+
+| Task | Reference | Purpose |
+|---|---|---|
+| "How do I structure a comparator / ADC / DAC / filter?" | `references/categories/` | Circuit-specific best practices, patterns, edge cases |
+| "What naming convention should I use?" | `references/customize.md` | Project-specific overrides for ports, parameters, file headers |
+| "Is my module voltage-domain or current-domain?" | `references/domain-routing.md` | Classification guide + mixed-domain splitting strategies |
+| "Can EVAS simulate my voltage-domain module?" | `references/evas-capabilities.manifest` | Check EVAS supported constructs |
+| "How do I verify my ADC behavioral model?" | `references/adc-testbench-guide.md` | Full ADCToolbox workflow with coherent sampling + spectral analysis |
+| "Show me working examples" | `assets/examples/` | Correct/incorrect patterns by category or technique |
+| "What's this advanced syntax for?" | `references/verilog-a-advanced.md` | String parsing, `$vt`, `branch`, `@(timer)`, conditional compilation, etc. |
 
 ---
 
@@ -59,6 +83,42 @@ module example (VDD, VSS, clk_i, dout_o);
     inout electrical VDD, VSS;       // WRONG — Spectre syntax error
 ```
 
+#### Vector (Array) Ports
+
+For multi-bit buses, use **vector notation** with **MSB at left, LSB at right** (MSB:LSB).
+Default convention: `[31:0]` means bit 31 is MSB, bit 0 is LSB.
+
+**Correct — vector ports (preferred for buses):**
+```verilog
+// Single-ended 10-bit data buses
+input electrical [9:0] data_i [0:31];      // 32 channels, 10-bit each
+output electrical [15:0] result_o;         // Single 16-bit output
+
+// Clock array
+input electrical clk_i [0:31];             // 32 clock signals
+```
+
+**Wrong — individual port enumeration:**
+```verilog
+// DON'T do this for large buses:
+input electrical [9:0] DIN_0, DIN_1, DIN_2, ..., DIN_31;  // Verbose and error-prone
+input electrical CLK_0, CLK_1, CLK_2, ..., CLK_31;        // Hard to maintain
+```
+
+**Access vector elements:**
+```verilog
+genvar ch;
+
+analog begin
+    for (ch = 0; ch < 32; ch = ch + 1) begin
+        code[ch] = V(data_i[ch]);          // Access channel ch
+        sync[ch] = V(clk_i[ch]);           // Clock for channel ch
+    end
+end
+```
+
+---
+
 ### Rule 2: Power ports are `inout`, not `input`
 
 `input VDD` silently breaks power-aware simulation.
@@ -79,9 +139,78 @@ Default threshold: `vth = (vdd + vss) / 2`.
 
 `parameter`, `real`, `integer`, `genvar` must appear before `analog begin`.
 
+**Correct:**
+```verilog
+module example (input electrical clk_i, output electrical [3:0] dout_o);
+    parameter integer nbits = 4;
+    real vth;
+    integer state;
+    genvar k;
+
+    analog begin
+        vth = 0.5;  // Initialize in analog block
+        // ... rest of module
+    end
+endmodule
+```
+
+**Wrong — declaration inside analog block:**
+```verilog
+module example (input electrical clk_i, output electrical [3:0] dout_o);
+    analog begin
+        integer state;      // ERROR: declaration not at module level
+        real vth;           // ERROR: declaration not at module level
+        // ...
+    end
+endmodule
+```
+
 ### Rule 5: Loop variables use `genvar`
 
-`integer` loop index causes elaboration errors in most simulators.
+Loop indices must use `genvar`, **not** `integer`. Integer loop indices cause elaboration
+errors in most simulators.
+
+**Correct — genvar in @event block (runtime loop):**
+```verilog
+genvar i;
+
+analog begin
+    @(initial_step or cross(V(CLKS)-vdd/2, +1)) begin
+        $strobe("[reset]");
+        for (i = `NUM_ADC_BITS; i >= 1; i = i - 1) begin
+            dout[i] = 0;
+        end
+    end
+end
+```
+
+**Correct — genvar in bare block (compile-time expansion):**
+```verilog
+genvar k;
+
+analog begin
+    // These assignments are compile-time expanded
+    for (k = 0; k < N_BIT; k = k + 1) begin
+        if ((code >> k) & 1)
+            V(DOUT_o[k]) <+ transition(V(VDD), 0, tedge);
+        else
+            V(DOUT_o[k]) <+ transition(V(VSS), 0, tedge);
+    end
+end
+```
+
+**Wrong — integer loop index:**
+```verilog
+integer i;  // Declared at module level (OK)
+
+analog begin
+    @(initial_step) begin
+        for (i = 0; i < 10; i = i + 1) begin  // ERROR: loop uses integer
+            code[i] = 0;
+        end
+    end
+end
+```
 
 ### Rule 6: Initialize state in `@(initial_step)`
 
@@ -136,72 +265,79 @@ Start from `assets/template.va`. Reference examples in `assets/examples/`.
 
 ---
 
-## Useful Syntax
+## Useful Syntax — Common Patterns
+
+### Mathematical Constants — Define at Top
+
+Verilog-A does not predefine `PI`. Define at module top or use numeric literals:
+
+**Option A: Use `define` macro**
+```verilog
+`define PI 3.14159265359
+
+module example (...);
+    // ...
+    phase = 2 * `PI * freq * $abstime;
+endmodule
+```
+
+**Option B: Use numeric literal**
+```verilog
+module example (...);
+    // ...
+    phase = 2 * 3.14159265359 * freq * $abstime;
+endmodule
+```
+
+---
 
 ### `V(A, B)` — differential voltage
-```
+```verilog
 Dp = V(VINP, VINN) > VOS;        // compare differential pair against offset
 ```
 
-### String parameters — `.len()` / `.substr()`
-```
-parameter conf = "10110";
-integer conf_list[4:0];
-@(initial_step) begin
-    for (i = 0; i < conf.len(); i = i + 1)
-        conf_list[i] = (conf.substr(i, i) == "1");
-end
-```
-
 ### `@(above())` — level-sensitive threshold
-```
+```verilog
 @(above(V(RST) - vth)) begin     // fires at t=0 if already true
     state = 0;
 end
 ```
 
 ### Internal voltage nodes
-```
+```verilog
 voltage [15:0] shadow;
 V(shadow[i]) <+ transition(active ? 1 : 0, 0, 100p, 1p);
 V(OUT[i]) <+ transition((V(shadow[i]) > 0.5) ? vh : vl, 0);
 ```
 
 ### `transition()` as intermediate variable
-```
+```verilog
 real clk_delayed;
 clk_delayed = transition(cond ? 1 : 0, 200p, 1p, 1p);
 V(CLKOUT) <+ transition((clk_delayed > 0.5) ? vh : vl, 0);
 ```
 
 ### `analog` single-line (no `begin/end`)
-```
+```verilog
 analog
     V(sigout) <+ k1 * V(sigin1) + k2 * V(sigin2);
 ```
 
 ### `generate` — compile-time loop
-```
+```verilog
 generate j (0, 7) begin
     comp_var[j] = 1.0 + mismatch * abs($random(j) / `MAXINT);
 end
 ```
 
 ### `$random()` — mismatch modeling
-```
+```verilog
 r1 = abs($random(seed) / `MAXINT);   // uniform [0, 1]
 cap = cap_nominal * (1.0 + r1 * mismatch);
 ```
 
-### Parameterized `` `define ``
-```
-`define FRAC_MM(I) (1.0 + mismatch * abs($random(I) / `MAXINT))
-comp_var[0] = `FRAC_MM(seed0);
-`undef FRAC_MM
-```
-
 ### `@(final_step)` — end-of-simulation
-```
+```verilog
 @(final_step) begin
     $strobe("samples = %d, avg = %f", cnt, sum / cnt);
     $fclose(fh);
@@ -209,115 +345,62 @@ end
 ```
 
 ### `@(initial_step("analysis"))` — filtered init
-```
+```verilog
+`define PI 3.14159265359
+
 @(initial_step("ac", "dc")) begin
     c = 1 / (2 * `PI * r * bandwidth);
 end
 ```
 
 ### `$abstime` — simulation time
-```
+```verilog
+`define PI 3.14159265359
+
 phase = 2 * `PI * freq * $abstime;
 ```
 
 ### `$bound_step()` — timestep control
-```
+```verilog
 $bound_step(1.0 / (32 * inst_freq));
 ```
 
 ### `$display` / `$strobe` / `$finish`
-```
+```verilog
 $display("val = %f at t = %e", val, $abstime);   // immediate
 $strobe("val = %f", val);                          // end of timestep
 $finish;                                            // terminate
 ```
 
 ### File I/O: `$fopen` / `$fstrobe` / `$fclose`
-```
+```verilog
 @(initial_step) fh = $fopen("output.dat", "w");
 @(timer(next)) $fstrobe(fh, "%e\t%e", $abstime, V(sig));
 @(final_step) $fclose(fh);
 ```
 
-### `$vt` / `$temperature`
-```
-I(a, c) <+ is * (limexp(V(a, c) / $vt) - 1);   // $vt ≈ 25.86 mV @ 300K
-```
-
-### `@(timer())` — periodic event
-```
-@(timer(next_sample)) begin
-    val = V(sig);
-    next_sample = next_sample + t_sample;
-end
-```
-
 ### `idtmod()` — modular integration (VCO)
-```
+```verilog
+`define PI 3.14159265359
+
 phase = idtmod(freq, 0, 1);
 V(out) <+ amp * sin(2 * `PI * phase);
 ```
 
-### `slew()` — rate limiter
-```
-V(out) <+ slew(V(in), max_slope, -max_slope);
-```
-
-### `limexp()` — convergence-safe exponential
-```
-I(a, c) <+ is * (limexp(V(a, c) / $vt) - 1);
-```
-
-### `last_crossing()` — time of last crossing
-```
-t_cross = last_crossing(V(sig) - vth, +1);
-```
-
 ### `case/endcase`
-```
+```verilog
 case (state)
     0: out = vl;
     1: out = vh;
 endcase
 ```
 
-### `branch` — named branch
-```
-branch (IN, OUT) sw;
-I(IN, OUT) <+ V(sw) * transition(cond, 0, 10p);
-```
+---
 
-### `analysis()` — test analysis type
-```
-if (analysis("ac")) V(out) <+ gain * V(in);
-```
+## Advanced Syntax
 
-### `` `ifdef `` — conditional compilation
-```
-`ifdef __VAMS_ENABLE__
-    iin = I(<vin>);
-`else
-    iin = I(vin, vin);
-`endif
-```
-
-### `exclude` — parameter range exclusion
-```
-parameter real gain = 1 from (-inf:inf) exclude 0;
-```
-
-### `current` type / `I()` single-node
-```
-output current iout;
-I(iout) <+ gm * V(vin);
-```
-
-### `nature` — custom physical quantity
-```
-nature Position
-    units = "m"; access = Pos; abstol = 1u;
-endnature
-```
+For specialized use cases (string parsing, analysis-specific code, current-domain functions, etc.),
+see `references/verilog-a-advanced.md`.
 
 ---
 
@@ -382,6 +465,38 @@ static check against `evas-capabilities.manifest` only.
 
 ### Mixed-domain
 Do not attempt. Refer to `domain-routing.md § Mixed`.
+
+---
+
+## ADC Characterization & Verification
+
+For ADC behavioral models (SAR, flash, pipeline, TIADC, etc.), after successful simulation,
+use **ADCToolbox** to verify functional and spectral performance.
+
+### When to Use ADCToolbox
+
+- Module category is **ADC / SAR** (see Category Index)
+- Behavioral model is **complete and simulation-verified**
+- Need to measure spectral metrics: ENOB, SNDR, SFDR, THD, SNR
+- Need to characterize per-channel mismatch (TIADC), nonlinearity, jitter effects
+
+### Key Points
+
+- Use `find_coherent_frequency()` to avoid spectral leakage
+- Access metrics from result dict (e.g., `result['enob']`, `result['sndr_dbc']`)
+- See `references/adc-testbench-guide.md` for complete workflow and theory
+- Example scripts in `assets/examples/adc-verification/`
+
+### Resources
+
+**Local:**
+- `references/adc-testbench-guide.md` — Full workflow, API reference, troubleshooting
+- `assets/examples/adc-verification/testbench_10bit_basic.py` — Basic example
+- `assets/examples/adc-verification/testbench_sar.py` — SAR algorithm example
+
+**Official:**
+- [Arcadia-1/ADCToolbox](https://github.com/Arcadia-1/ADCToolbox) — Main repository
+- [api-quickref.md](https://github.com/Arcadia-1/ADCToolbox/blob/main/skills/adctoolbox-user-guide/references/api-quickref.md) — Complete API reference
 
 ---
 
