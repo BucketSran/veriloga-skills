@@ -48,7 +48,7 @@ real-world .va files plus a 171-module reference library (14,311 LOC).
 | "What naming convention should I use?" | `references/customize.md` | Project-specific overrides for ports, parameters, file headers |
 | "Is my module voltage-domain or current-domain?" | `references/domain-routing.md` | Classification guide + mixed-domain splitting strategies |
 | "Can EVAS simulate my voltage-domain module?" | `references/evas-capabilities.manifest` | Check EVAS supported constructs |
-| "How do I verify my ADC behavioral model?" | `references/adc-testbench-guide.md` | Full ADCToolbox workflow with coherent sampling + spectral analysis |
+| "How do I verify my ADC behavioral model?" | `references/adc-testbench-guide.md` | Full adctoolbox workflow with coherent sampling + spectral analysis |
 | "Show me working examples" | `assets/examples/` | Correct/incorrect patterns by category or technique |
 | "What's this advanced syntax for?" | `references/verilog-a-advanced.md` | String parsing, `$vt`, `branch`, `@(timer)`, conditional compilation, etc. |
 
@@ -490,7 +490,7 @@ Do not attempt. Refer to `domain-routing.md § Mixed`.
 
 ## ADC Characterization & Verification
 
-**If the module is ADC-related (SAR, flash, pipeline, TIADC, etc.), always use python library ADCToolbox for verification. Never hand-roll FFT with scipy.**
+**If the module is ADC-related (SAR, flash, pipeline, TIADC, etc.), always use python library adctoolbox for verification. Never hand-roll FFT with scipy.**
 
 - Metrics: ENOB, SNDR, SFDR, THD, SNR; TIADC per-channel mismatch, nonlinearity, jitter
 - Always call `find_coherent_frequency()` to avoid spectral leakage

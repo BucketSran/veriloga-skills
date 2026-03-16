@@ -1,12 +1,12 @@
 # ADC Testbench & Verification Guide
 
-Using **ADCToolbox** for ADC behavioral model characterization and verification.
+Using **adctoolbox** for ADC behavioral model characterization and verification.
 
 ---
 
 ## Overview
 
-After writing an ADC behavioral model in Verilog-A, use **ADCToolbox** to:
+After writing an ADC behavioral model in Verilog-A, use **adctoolbox** to:
 - Calculate coherent sampling parameters (avoid spectral leakage)
 - Generate realistic test signals with jitter, noise, nonlinearity
 - Quantize to your ADC's resolution
@@ -16,7 +16,6 @@ After writing an ADC behavioral model in Verilog-A, use **ADCToolbox** to:
 
 **Domain:** Voltage-domain behavioral models (SAR, flash, pipeline, TIADC, etc.)
 
-**Official Documentation:** [ADCToolbox GitHub](https://github.com/Arcadia-1/ADCToolbox)
 
 ---
 
@@ -48,10 +47,10 @@ ENOB ≈ ideal (e.g., 10.0 bits for 10-bit ADC)
 #### Why It Matters
 
 If the signal does not satisfy the coherent relationship, FFT bins contain spectral leakage,
-which corrupts ENOB and THD measurements. ADCToolbox's `find_coherent_frequency()`
+which corrupts ENOB and THD measurements. adctoolbox's `find_coherent_frequency()`
 calculates the nearest valid frequency.
 
-### Standard Metrics (from ADCToolbox)
+### Standard Metrics (from adctoolbox)
 
 | Metric | Key | Typical Value (10-bit) | Definition |
 |---|---|---|---|
@@ -112,7 +111,7 @@ DC = 0.5              # DC offset (50% of FS)
 v_in = DC + A * np.sin(2 * np.pi * fin_actual * t)
 ```
 
-Option B: **Use ADCToolbox signal generator** (realistic effects):
+Option B: **Use adctoolbox signal generator** (realistic effects):
 ```python
 from adctoolbox.siggen import ADC_Signal_Generator
 
@@ -137,7 +136,7 @@ code_out = np.floor((v_in - vref_min) / vfull_scale * num_levels)
 code_out = np.clip(code_out, 0, num_levels - 1).astype(int)
 ```
 
-### Step 4: Analyze with ADCToolbox
+### Step 4: Analyze with adctoolbox
 
 ```python
 from adctoolbox import analyze_spectrum
@@ -190,7 +189,7 @@ ax.grid(True, alpha=0.3)
 plt.savefig('results/01_input_signal.png', dpi=150, bbox_inches='tight')
 plt.close(fig)
 
-# Plot 2: Spectrum (use ADCToolbox)
+# Plot 2: Spectrum (use adctoolbox)
 fig, ax = plt.subplots(figsize=(12, 5))
 result = analyze_spectrum(code_out, fs=fs, create_plot=True, ax=ax, win_type='hann')
 ax.set_xlim([0, fs/2/1e6])  # Set x-axis to Nyquist
@@ -217,7 +216,7 @@ See `examples/adc-verification/` for full working examples:
 - `testbench_sar.py` — SAR ADC algorithm with cycle-by-cycle behavior
 - `testbench_tiadc.py` — Time-interleaved ADC with per-channel mismatch
 
-Each script uses the **real ADCToolbox API** shown above.
+Each script uses the **real adctoolbox API** shown above.
 
 ---
 
@@ -317,7 +316,7 @@ for i in range(len(v_in)):
     )
 ```
 
-Then analyze as usual — ADCToolbox will show the effect of mismatch on SINAD/THD.
+Then analyze as usual — adctoolbox will show the effect of mismatch on SINAD/THD.
 
 ---
 
@@ -376,16 +375,3 @@ result = analyze_spectrum(code_out, fs=fs, create_plot=True,
 Match ENOB only if you match signal amplitude, frequency, and ADC model exactly.
 
 ---
-
-## References
-
-**Official ADCToolbox Documentation:**
-- **GitHub Repository:** [Arcadia-1/ADCToolbox](https://github.com/Arcadia-1/ADCToolbox)
-- **Full API Reference:** [api-quickref.md](https://github.com/Arcadia-1/ADCToolbox/blob/main/skills/adctoolbox-user-guide/references/api-quickref.md)
-- **Workflow Recipes:** [workflow-recipes.md](https://github.com/Arcadia-1/ADCToolbox/blob/main/skills/adctoolbox-user-guide/references/workflow-recipes.md)
-- **SKILL Definition:** [SKILL.md](https://github.com/Arcadia-1/ADCToolbox/blob/main/skills/adctoolbox-user-guide/SKILL.md)
-
-**Standards & Theory:**
-- IEEE 1241: Standard for terminology and test methods for ADCs
-- "Effective Multitone Testing of ADCs" — Osbert et al.
-- Coherent sampling: Ensures integer cycles to avoid spectral leakage
