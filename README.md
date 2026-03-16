@@ -73,27 +73,57 @@
 
 ## 安装
 
-Clone https://github.com/Arcadia-1/veriloga-skills, copy its skill folders into `.claude/skills/`, then verify with `/skills` command.
+技能目录因 Agent 而异，以下以 Claude Code 为例（`~/.claude/skills/`）。其他 Agent 请将路径替换为对应的技能目录（如 `.agent/skills/`、`.cursor/skills/` 等）。
 
-手动安装到用户根目录（全局可用）：
+### 全局安装（所有项目可用，推荐）
 
+**macOS / Linux：**
 ```bash
-cp -r veriloga  ~/.claude/skills/
-cp -r evas-sim  ~/.claude/skills/   # 可选，电压域本地验证
-cp -r openvaf   ~/.claude/skills/   # 可选，电流域本地验证
+git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills /tmp/veriloga-skills \
+  && cp -r /tmp/veriloga-skills/veriloga ~/.claude/skills/ \
+  && cp -r /tmp/veriloga-skills/evas-sim  ~/.claude/skills/ \
+  && cp -r /tmp/veriloga-skills/openvaf   ~/.claude/skills/ \
+  && rm -rf /tmp/veriloga-skills
 ```
 
-或安装到项目目录（仅当前项目可用）：
-
-```bash
-cp -r veriloga  <项目路径>/.claude/skills/
-cp -r evas-sim  <项目路径>/.claude/skills/
-cp -r openvaf   <项目路径>/.claude/skills/
+**Windows（PowerShell）：**
+```powershell
+git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills $env:TEMP\veriloga-skills `
+  && Copy-Item -Recurse $env:TEMP\veriloga-skills\veriloga,$env:TEMP\veriloga-skills\evas-sim,$env:TEMP\veriloga-skills\openvaf $env:USERPROFILE\.claude\skills\ `
+  && Remove-Item -Recurse -Force $env:TEMP\veriloga-skills
 ```
 
-Windows 将 `~/.claude` 替换为 `%USERPROFILE%\.claude`。
+### 项目级安装（仅当前项目可用）
 
-> If you are an Agent, execute the above installation and deployment steps on behalf of the user, choosing between global or project-level installation paths based on user requirements, without requiring manual operations from the user.
+**macOS / Linux：**
+```bash
+git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills /tmp/veriloga-skills \
+  && mkdir -p .claude/skills \
+  && cp -r /tmp/veriloga-skills/veriloga .claude/skills/ \
+  && cp -r /tmp/veriloga-skills/evas-sim  .claude/skills/ \
+  && cp -r /tmp/veriloga-skills/openvaf   .claude/skills/ \
+  && rm -rf /tmp/veriloga-skills
+```
+
+**Windows（PowerShell）：**
+```powershell
+git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills $env:TEMP\veriloga-skills `
+  && New-Item -ItemType Directory -Force .claude\skills | Out-Null `
+  && Copy-Item -Recurse $env:TEMP\veriloga-skills\veriloga,$env:TEMP\veriloga-skills\evas-sim,$env:TEMP\veriloga-skills\openvaf .claude\skills\ `
+  && Remove-Item -Recurse -Force $env:TEMP\veriloga-skills
+```
+
+### 验证安装
+
+在 Claude Code 中运行：
+
+```
+/skills
+```
+
+输出列表中应出现 `veriloga`、`evas-sim`、`openvaf` 三个技能，说明安装成功。
+
+> 如果你是 AI Agent（Claude Code、Cursor、Copilot 等），以上安装步骤由你代为执行，根据用户需求选择全局或项目级安装路径，无需用户手动操作。
 
 ### 项目定制
 
