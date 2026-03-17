@@ -1,28 +1,28 @@
-# 环境要求 / Requirements
+# Requirements
 
-## veriloga 技能
+## veriloga skill
 
-**无外部依赖。** 纯文档/参考型技能，任何 Agent 直接使用。
+**No external dependencies.** Pure documentation/reference skill — any Agent can use it directly.
 
-## 本地验证（可选）
+## Local Verification (Optional)
 
-写好的模块可以在本地验证。根据模块使用的构造，有两种验证路径：
+Finished modules can be verified locally. There are two verification paths depending on the constructs used in the module:
 
-### 电压域验证 — EVAS
+### Voltage-Domain Verification — EVAS
 
-适用于使用 `V() <+` + `@(cross())` / `transition()` 的模块（SAR 逻辑、DFF、计数器等）。
+Applies to modules that use `V() <+` + `@(cross())` / `transition()` (SAR logic, DFF, counter, etc.).
 
 ```bash
 pip install evas
 ```
 
-| 工具 | 用途 | 获取方式 |
-|------|------|----------|
-| [EVAS](https://evas.tokenzhang.com/) | 事件驱动 Verilog-A 仿真器 | `pip install evas-sim` |
-| **evas-sim 技能** | Agent 驱动 EVAS 仿真的完整指令 | 本项目 `evas-sim/SKILL.md` |
+| Tool | Purpose | How to get |
+|------|---------|------------|
+| [EVAS](https://evas.tokenzhang.com/) | Event-driven Verilog-A simulator | `pip install evas-sim` |
+| **evas-sim skill** | Complete instructions for Agent-driven EVAS simulation | `evas-sim/SKILL.md` in this repo |
 
-### 电流域验证 — OpenVAF + ngspice
+### Current-Domain Verification — OpenVAF + ngspice
 
-适用于使用 `I() <+` / `ddt()` / `laplace_nd()` 的模块（Opamp、RLC、VCO 等）。
+Applies to modules that use `I() <+` / `ddt()` / `laplace_nd()` (Opamp, RLC, VCO, etc.).
 
-> **安装较繁琐**：需要分别安装 OpenVAF 编译器、ngspice（≥ 38，需支持 OSDI），Windows 上还需要 Visual C++ Build Tools。详见 [`openvaf/references/install.md`](./openvaf/references/install.md)。
+> **Installation is more involved**: you need to install the OpenVAF compiler and ngspice (≥ 38, with OSDI support) separately; on Windows, Visual C++ Build Tools are also required. See [`openvaf/references/install.md`](./openvaf/references/install.md) for details.
