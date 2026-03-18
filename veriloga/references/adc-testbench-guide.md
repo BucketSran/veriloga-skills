@@ -28,8 +28,12 @@ After writing an ADC behavioral model in Verilog-A, use **adctoolbox** to:
 ## Installation
 
 ```bash
-pip install adctoolbox
+pip install adctoolbox==0.4.0
 ```
+
+Examples in this guide were verified against `adctoolbox 0.4.0`.
+Current API names in that release include `show_plot`, `n_thd`, metric keys such as
+`sndr_db`/`sfdr_db`, and `bin_idx` for the detected signal bin.
 
 ---
 
@@ -61,11 +65,12 @@ calculates the nearest valid frequency.
 | Metric | Key | Typical Value (10-bit) | Definition |
 |---|---|---|---|
 | **ENOB** | `result['enob']` | ~10.0 bits | Effective Number Of Bits |
-| **SNDR** | `result['sndr_dbc']` | ~62 dB | Signal-to-Noise-and-Distortion Ratio (dBc) |
-| **SFDR** | `result['sfdr_dbc']` | ~75 dB | Spurious-Free Dynamic Range (dBc) |
-| **SNR** | `result['snr_dbc']` | ~62 dB | Signal-to-Noise Ratio (dBc) |
-| **THD** | `result['thd_dbc']` | -70 dBc | Total Harmonic Distortion (dBc) |
+| **SNDR** | `result['sndr_db']` | ~62 dB | Signal-to-Noise-and-Distortion Ratio (dB) |
+| **SFDR** | `result['sfdr_db']` | ~75 dB | Spurious-Free Dynamic Range (dB) |
+| **SNR** | `result['snr_db']` | ~62 dB | Signal-to-Noise Ratio (dB) |
+| **THD** | `result['thd_db']` | -70 dB | Total Harmonic Distortion (dB) |
 | **NSD** | `result['nsd_dbfs_hz']` | -155 dBFS/Hz | Noise Spectral Density |
+| **Signal Bin** | `result['bin_idx']` | depends on `Fin/Fs` | Fundamental FFT bin selected by analysis |
 
 ---
 
@@ -154,30 +159,33 @@ norm_freq = fin_actual / fs
 result = analyze_spectrum(
     data=code_out,
     fs=fs,
-    create_plot=False,          # Suppress auto-plotting
+    show_plot=False,            # Suppress plotting in headless scripts
     win_type='hann',            # Hanning window (good for ADC testing)
-    max_harmonic=5              # Analyze up to 5th harmonic
+    n_thd=5                     # Analyze up to the 5th harmonic for THD
 )
 
 # Extract metrics (dict keys)
 enob = result['enob']
-sndr = result['sndr_dbc']       # Signal-to-Noise-and-Distortion Ratio
-sfdr = result['sfdr_dbc']       # Spurious-Free Dynamic Range
-snr = result['snr_dbc']
-thd = result['thd_dbc']
+sndr = result['sndr_db']        # Signal-to-Noise-and-Distortion Ratio
+sfdr = result['sfdr_db']        # Spurious-Free Dynamic Range
+snr = result['snr_db']
+thd = result['thd_db']
 nsd = result['nsd_dbfs_hz']     # Noise Spectral Density
+signal_bin = result['bin_idx']  # Fundamental bin identified by adctoolbox
 
 print(f"ENOB:  {enob:.2f} bits")
-print(f"SNDR:  {sndr:.2f} dBc")
-print(f"SFDR:  {sfdr:.2f} dBc")
-print(f"SNR:   {snr:.2f} dBc")
-print(f"THD:   {thd:.2f} dBc")
+print(f"SNDR:  {sndr:.2f} dB")
+print(f"SFDR:  {sfdr:.2f} dB")
+print(f"SNR:   {snr:.2f} dB")
+print(f"THD:   {thd:.2f} dB")
 print(f"NSD:   {nsd:.2f} dBFS/Hz")
+print(f"Bin:   {signal_bin}")
 ```
 
 ### Step 5: Generate Publication-Quality Plots
 
-Always use `create_plot=False` for headless execution, then create plots manually:
+Use `show_plot=False` for metric-only, headless execution. When you want a saved spectrum
+figure, create the Matplotlib axis yourself and pass `show_plot=True, ax=ax`:
 
 ```python
 import matplotlib.pyplot as plt
@@ -197,7 +205,7 @@ plt.close(fig)
 
 # Plot 2: Spectrum (use adctoolbox)
 fig, ax = plt.subplots(figsize=(12, 5))
-result = analyze_spectrum(code_out, fs=fs, create_plot=True, ax=ax, win_type='hann')
+result = analyze_spectrum(code_out, fs=fs, show_plot=True, ax=ax, win_type='hann')
 ax.set_xlim([0, fs/2/1e6])  # Set x-axis to Nyquist
 plt.savefig('results/02_fft_spectrum.png', dpi=150, bbox_inches='tight')
 plt.close(fig)
@@ -234,27 +242,27 @@ ideal quantization comparison, and `analyze_spectrum()` output.
 
 2. **Suppress auto-plotting** — scripts must be non-interactive
    ```python
-   result = analyze_spectrum(data, fs=fs, create_plot=False)  # No display
+   result = analyze_spectrum(data, fs=fs, show_plot=False)  # No display
    ```
 
 3. **Save plots explicitly** — use `ax` parameter for full control
    ```python
    fig, ax = plt.subplots()
-   analyze_spectrum(data, fs=fs, create_plot=True, ax=ax)
+   analyze_spectrum(data, fs=fs, show_plot=True, ax=ax)
    plt.savefig('spectrum.png')
    plt.close(fig)
    ```
 
 4. **Check FFT bin** — verify signal landed where expected via adctoolbox result
    ```python
-   print(f"Signal at bin {result['signal_bin']}, expected ~{bin_idx}")
+   print(f"Signal at bin {result['bin_idx']}, expected ~{bin_idx}")
    ```
 
 5. **Log metrics to file** — for documentation
    ```python
    with open('results/metrics.txt', 'w') as f:
        f.write(f"ENOB: {enob:.2f} bits\n")
-       f.write(f"SNDR: {sndr:.2f} dBc\n")
+       f.write(f"SNDR: {sndr:.2f} dB\n")
    ```
 
 ### ❌ Avoid This
@@ -282,7 +290,7 @@ ideal quantization comparison, and `analyze_spectrum()` output.
    plt.show()
    ```
 
-3. **Using `create_plot=True` without axis control**
+3. **Using `show_plot=True` without axis control**
    ```python
    # Can work but less controllable
    # Better: control axis explicitly
@@ -337,7 +345,7 @@ Then analyze as usual — adctoolbox will show the effect of mismatch on SINAD/T
 
 **Check 1: Coherent frequency?**
 
-Use `result['signal_bin']` returned by `analyze_spectrum()` to verify the signal bin.
+Use `result['bin_idx']` returned by `analyze_spectrum()` to verify the signal bin.
 
 **Check 2: ADC full-scale range?**
 ```python
@@ -366,7 +374,7 @@ if A_percent > 0.95:
 **Check:** Unintended frequency content in signal:
 ```python
 # Plot raw spectrum to identify unwanted tones
-result = analyze_spectrum(code_out, fs=fs, create_plot=True,
+result = analyze_spectrum(code_out, fs=fs, show_plot=True,
                          plot_harmonics_up_to=10)
 # Look for peaks not at signal or harmonic frequencies
 ```

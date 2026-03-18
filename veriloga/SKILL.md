@@ -508,7 +508,7 @@ Do not attempt. Refer to `domain-routing.md § Mixed`.
 
 - Metrics: ENOB, SNDR, SFDR, THD, SNR; TIADC per-channel mismatch, nonlinearity, jitter
 - Always call `find_coherent_frequency()` to avoid spectral leakage
-- Read results from the dict: `result['enob']`, `result['sndr_dbc']`, etc.
+- Read results from the dict: `result['enob']`, `result['sndr_db']`, `result['sfdr_db']`, `result['bin_idx']`, etc.
 - Full workflow: `references/adc-testbench-guide.md` · Examples: `assets/examples/adc-verification/`
 
 ---

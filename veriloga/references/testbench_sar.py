@@ -43,14 +43,14 @@ codes_ideal = np.clip(np.floor((v_in - Vmin) / (Vmax - Vmin) * 2**Nbits), 0, 2**
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
 
-r_sar   = analyze_spectrum(codes_sar,   fs=Fs, ax=ax1, max_scale_range=[Vmin, Vmax])
-r_ideal = analyze_spectrum(codes_ideal, fs=Fs, ax=ax2, max_scale_range=[Vmin, Vmax])
+r_sar   = analyze_spectrum(codes_sar,   fs=Fs, ax=ax1, max_scale_range=[Vmin, Vmax], n_thd=5, show_plot=True)
+r_ideal = analyze_spectrum(codes_ideal, fs=Fs, ax=ax2, max_scale_range=[Vmin, Vmax], n_thd=5, show_plot=True)
 
-ax1.set_title(f"SAR ADC    ENOB={r_sar['enob']:.2f} b  SNDR={r_sar['sndr_dbc']:.2f} dB  SFDR={r_sar['sfdr_dbc']:.2f} dB")
-ax2.set_title(f"Ideal ADC  ENOB={r_ideal['enob']:.2f} b  SNDR={r_ideal['sndr_dbc']:.2f} dB  SFDR={r_ideal['sfdr_dbc']:.2f} dB")
+ax1.set_title(f"SAR ADC    ENOB={r_sar['enob']:.2f} b  SNDR={r_sar['sndr_db']:.2f} dB  SFDR={r_sar['sfdr_db']:.2f} dB")
+ax2.set_title(f"Ideal ADC  ENOB={r_ideal['enob']:.2f} b  SNDR={r_ideal['sndr_db']:.2f} dB  SFDR={r_ideal['sfdr_db']:.2f} dB")
 
 plt.tight_layout()
 plt.savefig(output_dir / "testbench_sar.png", dpi=150)
 plt.close()
-print(f"SAR:   ENOB={r_sar['enob']:.2f} b  SNDR={r_sar['sndr_dbc']:.2f} dB  SFDR={r_sar['sfdr_dbc']:.2f} dB")
-print(f"Ideal: ENOB={r_ideal['enob']:.2f} b  SNDR={r_ideal['sndr_dbc']:.2f} dB  SFDR={r_ideal['sfdr_dbc']:.2f} dB")
+print(f"SAR:   ENOB={r_sar['enob']:.2f} b  SNDR={r_sar['sndr_db']:.2f} dB  SFDR={r_sar['sfdr_db']:.2f} dB")
+print(f"Ideal: ENOB={r_ideal['enob']:.2f} b  SNDR={r_ideal['sndr_db']:.2f} dB  SFDR={r_ideal['sfdr_db']:.2f} dB")
