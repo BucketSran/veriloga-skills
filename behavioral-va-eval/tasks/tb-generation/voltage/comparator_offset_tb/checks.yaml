@@ -1,8 +1,0 @@
-syntax:
-  must_include:
-    - "simulator lang=spectre"
-    - "tran"
-    - "save"
-    - "ahdl_include"
-tb_compile:
-  backend: "evas"
