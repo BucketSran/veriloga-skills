@@ -73,31 +73,32 @@ Covers: OpenVAF installation and configuration, compile commands, ngspice OSDI l
 
 ## Installation
 
-> If you are an AI Agent (Claude Code, Cursor, Copilot, etc.), run the commands below directly — no manual action required from the user.
+> If you are an AI Agent, run the commands below directly — no manual action required from the user.
 
 **Step 1 — Choose installation scope**
 
 | Scenario | Choice |
 |----------|--------|
-| Current project only (recommended) | Project-level install → `.claude/skills/` |
-| All projects | Global install → `~/.claude/skills/` |
+| Current project only (default, recommended) | Project-level install → `.agent/skills/` |
+| All projects | Global install → `~/.agent/skills/` |
 
-> For other Agents, replace `.claude/skills/` with the appropriate skills directory (e.g. `.agent/skills/`).
+> Use project-level installation by default. Replace `.agent/skills/` with your agent's skill directory if it uses a different path.
 
 **Step 2 — Run the install command** (bash; works on macOS / Linux / Windows)
 
-Global:
+Project-level (default; run from the project root):
 ```bash
 git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills /tmp/veriloga-skills \
-  && cp -r /tmp/veriloga-skills/{veriloga,evas-sim,openvaf} ~/.claude/skills/ \
+  && mkdir -p .agent/skills \
+  && cp -r /tmp/veriloga-skills/{veriloga,evas-sim,openvaf} .agent/skills/ \
   && rm -rf /tmp/veriloga-skills
 ```
 
-Project-level (run from the project root):
+Global (optional):
 ```bash
 git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills /tmp/veriloga-skills \
-  && mkdir -p .claude/skills \
-  && cp -r /tmp/veriloga-skills/{veriloga,evas-sim,openvaf} .claude/skills/ \
+  && mkdir -p ~/.agent/skills \
+  && cp -r /tmp/veriloga-skills/{veriloga,evas-sim,openvaf} ~/.agent/skills/ \
   && rm -rf /tmp/veriloga-skills
 ```
 
@@ -105,7 +106,7 @@ git clone --depth 1 https://github.com/Arcadia-1/veriloga-skills /tmp/veriloga-s
 
 Run `/skills` in the Agent; confirm `veriloga`, `evas-sim`, and `openvaf` appear in the output list ✅
 
-> **If you are an AI Agent**: execute the installation steps above on behalf of the user, choosing global or project-level scope based on their needs — no manual action required. After installation, read `veriloga/SKILL.md` and start working.
+> **If you are an AI Agent**: execute the project-level installation by default. Use the global path only if the user explicitly wants a home-directory install. After installation, read `veriloga/SKILL.md` and start working.
 
 ### Project Customization
 
