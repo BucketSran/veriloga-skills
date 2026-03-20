@@ -1,28 +1,85 @@
 # Requirements
 
-## veriloga skill
+This repository has one core writing skill and two optional local-verification paths.
 
-**No external dependencies.** Pure documentation/reference skill — any Agent can use it directly.
+## Required
 
-## Local Verification (Optional)
+### `veriloga`
 
-Finished modules can be verified locally. There are two verification paths depending on the constructs used in the module:
+No external dependencies.
 
-### Voltage-Domain Verification — EVAS
+`veriloga` is a documentation/reference skill for writing Verilog-A behavioral models. An agent can
+use it directly by reading the files in this repository.
 
-Applies to modules that use `V() <+` + `@(cross())` / `transition()` (SAR logic, DFF, counter, etc.).
+## Optional Local Verification
+
+Local verification is optional. The required tools depend on the modeling style used in the `.va`
+module.
+
+### Voltage-Domain Verification: EVAS
+
+Use this path for modules built around voltage-domain behavioral constructs such as:
+
+- `V() <+`
+- `@(cross(...))`
+- `transition()`
+
+Typical examples:
+
+- SAR logic
+- DFF / digital state machines
+- counters
+- simple comparators
+- data generators
+
+Requirements:
+
+- `uv`
+- `evas-sim`
+
+Install:
 
 ```bash
 uv tool install evas-sim
 ```
 
-| Tool | Purpose | How to get |
-|------|---------|------------|
-| [EVAS](https://evas.tokenzhang.com/) | Event-driven Verilog-A simulator | `uv tool install evas-sim` |
-| **evas-sim skill** | Complete instructions for Agent-driven EVAS simulation | `evas-sim/SKILL.md` in this repo |
+See:
 
-### Current-Domain Verification — OpenVAF + ngspice
+- `evas-sim/SKILL.md`
 
-Applies to modules that use `I() <+` / `ddt()` / `laplace_nd()` (Opamp, RLC, VCO, etc.).
+### Current-Domain Verification: OpenVAF + ngspice
 
-> **Installation is more involved**: you need to install the OpenVAF compiler and ngspice (≥ 38, with OSDI support) separately; on Windows, Visual C++ Build Tools are also required. See [`openvaf/references/install.md`](./openvaf/references/install.md) for details.
+Use this path for modules that rely on analog solver constructs such as:
+
+- `I() <+`
+- `ddt()`
+- `idt()`
+- `idtmod()`
+- `laplace_nd()`
+
+Typical examples:
+
+- opamps
+- RLC networks
+- VCO cores
+- filters
+- LDO-style analog blocks
+
+Requirements:
+
+- OpenVAF
+- ngspice with OSDI support
+- On Windows, Visual C++ Build Tools may also be required
+
+See:
+
+- `openvaf/references/install.md`
+- `openvaf/SKILL.md`
+
+## Notes
+
+- Most users only need `veriloga`.
+- Install verification tooling only if you want to simulate locally.
+- If a module mixes voltage-domain and current-domain constructs, split it into smaller modules
+  before choosing a verification path.
+- Project-level skill installation is the default recommended setup; see `README.md`.

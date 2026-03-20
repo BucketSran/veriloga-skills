@@ -1,6 +1,8 @@
 raw_materials/
+.agent/
 .claude/
-CLAUDE.md
+.cursor/
+AGENT.md
 
 agent_playground/
 veriloga-workspace/

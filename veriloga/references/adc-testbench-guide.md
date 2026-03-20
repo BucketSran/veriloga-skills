@@ -28,11 +28,14 @@ After writing an ADC behavioral model in Verilog-A, use **adctoolbox** to:
 ## Installation
 
 ```bash
-pip install adctoolbox==0.4.0
+pip install -U adctoolbox
 ```
 
-Examples in this guide were verified against `adctoolbox 0.4.0`.
-Current API names in that release include `show_plot`, `n_thd`, metric keys such as
+Use the latest stable `adctoolbox` release on PyPI. Verify the current version before
+installing or pinning in automation.
+
+As of 2026-03-20, the latest PyPI release is `adctoolbox==0.6.4`.
+The API used in this guide includes `show_plot`, `n_thd`, metric keys such as
 `sndr_db`/`sfdr_db`, and `bin_idx` for the detected signal bin.
 
 ---

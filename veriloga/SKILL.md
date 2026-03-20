@@ -44,6 +44,29 @@ real-world .va files plus a 171-module reference library (14,311 LOC).
 
 ---
 
+## First-Pass Rule For ADC Metric Tasks
+
+If the task involves ADC verification or ADC dynamic metrics (SAR, flash, pipeline, TIADC, etc.),
+the first pass must follow `references/adc-testbench-guide.md`.
+
+Required first-pass workflow:
+
+1. Read `references/adc-testbench-guide.md` before writing the verification script
+2. Use the latest stable `adctoolbox` release on PyPI; verify the current version before installing or pinning
+3. Use `find_coherent_frequency()` to choose the stimulus frequency
+4. Use `analyze_spectrum()` for spectrum and dynamic-metric analysis
+5. Report at least these fields when available: `enob`, `sndr_db`, `sfdr_db`, `snr_db`, `thd_db`, `bin_idx`
+
+Forbidden as the primary method:
+
+- Hand-rolled FFT via `np.fft`, `scipy.signal`, or custom ENOB/SNDR math
+- CSV-only inspection as the main verification path
+
+CSV inspection is allowed only as a secondary sanity check after the adctoolbox flow
+has already produced the primary ADC metrics.
+
+---
+
 ## Reference File Guide
 
 **When you need help with a specific task:**
@@ -587,11 +610,21 @@ Do not attempt. Refer to `domain-routing.md § Mixed`.
 
 ## ADC Characterization & Verification
 
-**If the module is ADC-related (SAR, flash, pipeline, TIADC, etc.), always use python library adctoolbox for verification. Never hand-roll FFT with scipy.**
+For ADC-related modules (SAR, flash, pipeline, TIADC, etc.), verification must use
+the latest stable `adctoolbox` release on PyPI as the primary analysis path.
 
-- Metrics: ENOB, SNDR, SFDR, THD, SNR; TIADC per-channel mismatch, nonlinearity, jitter
+- Verify the current package version before installing or pinning
+- As of 2026-03-20, the latest PyPI release is `adctoolbox==0.6.4`
+- First read and follow `references/adc-testbench-guide.md`
+- Never hand-roll FFT with `np.fft`, `scipy.signal`, or custom metric formulas
+- Always call `analyze_spectrum()` for dynamic metrics
+- Report at least: `result['enob']`, `result['sndr_db']`, `result['sfdr_db']`,
+  `result['snr_db']`, `result['thd_db']`, `result['bin_idx']`
+- Metrics to review include ENOB, SNDR, SFDR, THD, SNR; TIADC work may also need
+  per-channel mismatch, nonlinearity, and jitter analysis
+- CSV-only checks are secondary sanity checks only; they do not replace the primary
+  adctoolbox-based verification flow
 - Always call `find_coherent_frequency()` to avoid spectral leakage
-- Read results from the dict: `result['enob']`, `result['sndr_db']`, `result['sfdr_db']`, `result['bin_idx']`, etc.
 - Full workflow: `references/adc-testbench-guide.md` · Runnable examples: `../behavioral-va-eval/examples/`
 
 ---
