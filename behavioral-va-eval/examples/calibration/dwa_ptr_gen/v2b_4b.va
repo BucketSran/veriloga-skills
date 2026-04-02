@@ -37,9 +37,9 @@ module v2b_4b (
                     (code >> 1) & 1, (code >> 0) & 1);
         end
 
-        V(out_3) <+ transition(vdd * ((code >> 3) & 1), 0, tedge, tedge);
-        V(out_2) <+ transition(vdd * ((code >> 2) & 1), 0, tedge, tedge);
-        V(out_1) <+ transition(vdd * ((code >> 1) & 1), 0, tedge, tedge);
-        V(out_0) <+ transition(vdd * ((code >> 0) & 1), 0, tedge, tedge);
+        V(out_3) <+ vdd * transition(((code >> 3) & 1) ? 1.0 : 0.0, 0, tedge, tedge);
+        V(out_2) <+ vdd * transition(((code >> 2) & 1) ? 1.0 : 0.0, 0, tedge, tedge);
+        V(out_1) <+ vdd * transition(((code >> 1) & 1) ? 1.0 : 0.0, 0, tedge, tedge);
+        V(out_0) <+ vdd * transition(((code >> 0) & 1) ? 1.0 : 0.0, 0, tedge, tedge);
     end
 endmodule

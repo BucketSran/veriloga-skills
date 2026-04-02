@@ -30,6 +30,6 @@ module sh_ideal(vin, clk, vdd, vss, rst_n, vout);
                 v_hold = V(vin, vss);
         end
 
-        V(vout, vss) <+ transition(v_hold, 0, tr);
+        V(vout, vss) <+ v_hold;
     end
 endmodule

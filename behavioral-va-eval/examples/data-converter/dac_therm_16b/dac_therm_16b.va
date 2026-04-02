@@ -1,8 +1,13 @@
-module dac_therm_16b (
-    input  electrical [15:0] din_therm,
-    input  electrical        rst_n,
-    output electrical        vout
-);
+`include "constants.vams"
+`include "disciplines.vams"
+
+module dac_therm_16b (din_therm, rst_n, vout);
+    input [15:0] din_therm;
+    electrical [15:0] din_therm;
+    input rst_n;
+    electrical rst_n;
+    output vout;
+    electrical vout;
 
     parameter real vstep      = 1.0;   // 1V per step -> 0..15V
     parameter real tr         = 10p;
@@ -40,3 +45,4 @@ module dac_therm_16b (
     end
 
 endmodule
+

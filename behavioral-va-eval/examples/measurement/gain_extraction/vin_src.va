@@ -42,8 +42,8 @@ analog begin
         end
     end
 
-    V(VOUT_P) <+ transition(vp, 0);
-    V(VOUT_N) <+ transition(vn, 0);
+    V(VOUT_P) <+ vp;
+    V(VOUT_N) <+ vn;
 end
 
 endmodule

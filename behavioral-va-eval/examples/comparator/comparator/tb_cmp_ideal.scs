@@ -20,4 +20,4 @@ Vvinn (vinn 0) vsource type=pwl wave=[0 0.4495 1.9e-9 0.4495 2e-9 0.4505 4e-9 0.
 IDUT (clk vinn vinp out_n out_p lp_int lm_int gnd vdd) cmp_ideal
 
 tran tran stop=4n maxstep=5p
-save clk:2e vinp:6f vinn:6f out_p:2e out_n:2e
+save clk vinp vinn out_p out_n

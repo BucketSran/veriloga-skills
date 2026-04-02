@@ -81,7 +81,7 @@ analog begin
 
     // DOUT[7]=MSB (weight[8]=128), DOUT[0]=LSB (weight[1]=1)
     for (i = `NUM_BITS; i >= 1; i = i - 1)
-        V(DOUT[i-1]) <+ transition(dout_bits[i] ? vdd : 0, 0);
+        V(DOUT[i-1]) <+ vdd * transition(dout_bits[i] ? 1.0 : 0.0, 0);
 end
 
 endmodule

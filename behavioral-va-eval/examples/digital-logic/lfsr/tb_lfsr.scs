@@ -20,4 +20,4 @@ Vclk (clk 0) vsource type=pulse val0=0 val1=0.9 period=1n delay=2.5n \
 IDUT (dpn vdd vss clk en rstb) lfsr seed=123
 
 tran tran stop=500n maxstep=10p
-save clk:2e dpn:2e rstb:d
+save clk dpn rstb

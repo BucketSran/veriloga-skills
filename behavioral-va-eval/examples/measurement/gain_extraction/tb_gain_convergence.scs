@@ -62,4 +62,4 @@ IEST (clk rst_n vamp_p vamp_n dpn) gain_estimator \
 // -- Simulation ----------------------------------------------------------------
 tran tran stop=5.5m maxstep=9n
 
-save clk:2e
+save clk

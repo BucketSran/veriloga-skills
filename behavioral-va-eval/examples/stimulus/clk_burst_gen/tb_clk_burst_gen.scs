@@ -15,4 +15,4 @@ Vrst_n (RST_N 0) vsource type=pwl \
 IDUT (CLK RST_N CLK_OUT) clk_burst_gen div=8 vdd=0.9 vth=0.45
 
 tran tran stop=3000n maxstep=1n
-save CLK:2e RST_N:2e CLK_OUT:2e
+save CLK RST_N CLK_OUT

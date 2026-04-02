@@ -21,4 +21,4 @@ IINV3 (n2  n3)  inverter td=100p tr=50p
 IINV4 (n3  out) inverter td=100p tr=50p
 
 tran tran stop=12n maxstep=50p
-save in:2e n1:2e n2:2e n3:2e out:2e
+save in n1 n2 n3 out

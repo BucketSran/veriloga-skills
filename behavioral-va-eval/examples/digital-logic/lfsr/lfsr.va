@@ -44,7 +44,7 @@ analog begin
 		end
 	end
 
-	V(DPN) <+ transition(lfsr_r[`N_lfsr]>0? V(VDD):V(VSS), 50p);
+	V(DPN) <+ V(VDD, VSS) * transition(lfsr_r[`N_lfsr] > 0 ? 1.0 : 0.0, 50p);
 
 end
 

@@ -1,8 +1,13 @@
-module ramp_gen (
-    input  electrical        clk_dtc,
-    input  electrical        rst_n,
-    output electrical [11:0] code
-);
+`include "constants.vams"
+`include "disciplines.vams"
+
+module ramp_gen (clk_dtc, rst_n, code);
+    input clk_dtc;
+    electrical clk_dtc;
+    input rst_n;
+    electrical rst_n;
+    output [11:0] code;
+    electrical [11:0] code;
 
     // -------------------------------------------------------
     // Parameters
@@ -90,8 +95,9 @@ module ramp_gen (
         
         // Parallel 12-bit digital output with transition filter
         for (i = 0; i < 12; i = i + 1) begin
-            V(code[i]) <+ transition((code_reg & (1 << i)) ? vh : vl);
+            V(code[i]) <+ vl + (vh - vl) * transition(((code_reg & (1 << i)) != 0) ? 1.0 : 0.0);
         end
 
     end
 endmodule
+

@@ -33,7 +33,7 @@ def _write_sweep_scs(scs_path: Path, voffset_v: float) -> None:
         "ISEARCH (CLK dcmpp vincm vinp_node vinn_node) cmp_offset_search vdd=0.8\n"
         f"ICMP (CLK vinn_node vinp_node dcmpn dcmpp lp lm vss vdd) cmp_strongarm voffset={voffset_v}\n\n"
         "tran tran stop=2400n maxstep=1n\n"
-        "save CLK:2e vinp_node:6f vinn_node:6f\n"
+        "save CLK vinp_node vinn_node\n"
     )
     scs_path.write_text(content, encoding='utf-8')
 

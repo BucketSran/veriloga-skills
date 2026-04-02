@@ -37,7 +37,7 @@ module dac_ideal_4b (
             v_target = V(vss) + bin_val * vstep;
         end
 
-        V(vout) <+ transition(v_target);
+        V(vout) <+ v_target;
     end
 
 endmodule

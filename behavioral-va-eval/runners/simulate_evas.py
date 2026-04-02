@@ -61,6 +61,18 @@ def rising_edges(values: list[float], times: list[float], threshold: float = 0.4
     return edges
 
 
+def threshold_crossings(values: list[float], times: list[float], threshold: float = 0.45) -> list[float]:
+    crossings: list[float] = []
+    for i in range(1, len(values)):
+        prev = values[i - 1]
+        curr = values[i]
+        crossed_up = prev < threshold <= curr
+        crossed_down = prev > threshold >= curr
+        if crossed_up or crossed_down:
+            crossings.append(times[i])
+    return crossings
+
+
 def decode_bus(rows: list[dict[str, float]], bit_names: list[str], threshold: float = 0.45) -> list[int]:
     decoded: list[int] = []
     for row in rows:
@@ -194,12 +206,27 @@ def check_sar_adc_dac_weighted_8b(rows: list[dict[str, float]]) -> tuple[bool, s
 def check_not_gate(rows: list[dict[str, float]]) -> tuple[bool, str]:
     if not rows or not {"a", "y"}.issubset(rows[0]):
         return False, "missing a/y"
+    times = [r["time"] for r in rows]
+    a_vals = [r["a"] for r in rows]
+    transition_times = threshold_crossings(a_vals, times, threshold=0.4)
+
+    # Ignore samples close to input switching points. Around those moments the
+    # DUT output is intentionally in transition, and Spectre/EVAS may sample
+    # different numbers of points inside the same physical edge interval.
+    guard = 40e-12
     good = 0
+    total = 0
     for r in rows:
+        t = r["time"]
+        if any(abs(t - edge_t) < guard for edge_t in transition_times):
+            continue
+        total += 1
         if (r["a"] > 0.4) != (r["y"] > 0.4):
             good += 1
-    frac = good / len(rows)
-    return frac > 0.9, f"invert_match_frac={frac:.3f}"
+    if total == 0:
+        return False, "no stable samples outside edge window"
+    frac = good / total
+    return frac > 0.9, f"invert_match_frac={frac:.3f} stable_samples={total}"
 
 
 def check_lfsr(rows: list[dict[str, float]]) -> tuple[bool, str]:

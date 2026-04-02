@@ -39,4 +39,5 @@ IDAC (dout_3 dout_2 dout_1 dout_0 vdd vss rst_n vout) \
 ISH (vin clk vdd vss rst_n vin_sh) sh_ideal
 
 tran tran stop=65n maxstep=200p
-save vin:3f vin_sh:3f clk:2e rst_n:d vout:3f dout_3:d dout_2:d dout_1:d dout_0:d
+save vin vin_sh clk rst_n vout dout_3 dout_2 dout_1 dout_0
+

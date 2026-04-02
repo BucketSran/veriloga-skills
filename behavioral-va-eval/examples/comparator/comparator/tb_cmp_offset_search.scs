@@ -29,4 +29,4 @@ ICMP (CLK vinn_node vinp_node dcmpn dcmpp lp lm vss vdd) cmp_strongarm \
         voffset=10m
 
 tran tran stop=2400n maxstep=1n
-save CLK:2e vincm:6f vinp_node:6f vinn_node:6f dcmpp:2e dcmpn:2e
+save CLK vincm vinp_node vinn_node dcmpp dcmpn

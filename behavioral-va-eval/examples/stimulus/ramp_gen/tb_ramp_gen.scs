@@ -20,6 +20,6 @@ IDUT (clk_dtc rst_n \
       N_CYCLE_START=2 UPDATE_DIV=1 vh=0.9 vl=0.0 vth=0.45
 
 tran tran stop=15000n maxstep=1n
-save clk_dtc:2e rst_n:d \
-     code_11:d code_10:d code_9:d code_8:d code_7:d code_6:d code_5:d code_4:d \
-     code_3:d code_2:d code_1:d code_0:d
+save clk_dtc rst_n \
+     code_11 code_10 code_9 code_8 code_7 code_6 code_5 code_4 \
+     code_3 code_2 code_1 code_0

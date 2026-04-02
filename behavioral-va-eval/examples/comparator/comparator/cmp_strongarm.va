@@ -53,8 +53,8 @@ analog begin
         xoutn = 0;
     end
 
-    V(DCMPP) <+ transition(vdd * xoutp, td_cmp, tedge, tedge);
-    V(DCMPN) <+ transition(vdd * xoutn, td_cmp, tedge, tedge);
+    V(DCMPP) <+ vdd * transition(xoutp ? 1.0 : 0.0, td_cmp, tedge, tedge);
+    V(DCMPN) <+ vdd * transition(xoutn ? 1.0 : 0.0, td_cmp, tedge, tedge);
 
 end
 

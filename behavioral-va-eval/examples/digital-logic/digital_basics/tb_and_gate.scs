@@ -20,4 +20,4 @@ VB (b 0) vsource type=pwl wave=[0 0  1.985n 0  2.015n 0.8 \
 IDUT (a b y) and_gate
 
 tran tran stop=8n maxstep=0.1n
-save a:2e b:2e y:2e
+save a b y

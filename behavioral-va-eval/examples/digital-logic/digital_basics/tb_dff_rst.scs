@@ -38,4 +38,4 @@ VRST (rst 0) vsource type=pwl wave=[0 0 \
 IDUT (clk d rst q qbar) dff_rst
 
 tran tran stop=20n maxstep=0.1n
-save clk:2e d:d rst:d q:2e qbar:2e
+save clk d rst q qbar

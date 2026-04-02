@@ -36,8 +36,8 @@ module noise_gen (
         // Output = Input + Noise
         vout = vin + noise;
 
-        // Write output voltage
-        V(vout_o) <+ transition(vout);
+        // Continuous noisy waveform should be contributed directly.
+        V(vout_o) <+ vout;
     end
 
 endmodule

@@ -29,8 +29,8 @@ analog begin
 
     dither_diff = (V(DPN) > vth) ? DITHER_AMP : -DITHER_AMP;
 
-    V(VOUT_P) <+ transition(V(VRES_P) + dither_diff * 0.5, 0);
-    V(VOUT_N) <+ transition(V(VRES_N) - dither_diff * 0.5, 0);
+    V(VOUT_P) <+ V(VRES_P) + dither_diff * 0.5;
+    V(VOUT_N) <+ V(VRES_N) - dither_diff * 0.5;
 end
 
 endmodule

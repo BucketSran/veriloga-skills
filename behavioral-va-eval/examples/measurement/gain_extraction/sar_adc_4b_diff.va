@@ -54,16 +54,12 @@ analog begin
     end
 
     // Digital outputs
-    for (k = 0; k < 4; k = k + 1) begin
-        if ((code >> k) & 1)
-            V(DOUT[k]) <+ transition(vdd, 0);
-        else
-            V(DOUT[k]) <+ transition(0.0, 0);
-    end
+    for (k = 0; k < 4; k = k + 1)
+        V(DOUT[k]) <+ vdd * transition(((code >> k) & 1) ? 1.0 : 0.0, 0);
 
     // Differential residue, centred at vdd/2
-    V(VRES_P) <+ transition(vth + vres_diff * 0.5, 0);
-    V(VRES_N) <+ transition(vth - vres_diff * 0.5, 0);
+    V(VRES_P) <+ vth + vres_diff * 0.5;
+    V(VRES_N) <+ vth - vres_diff * 0.5;
 end
 
 endmodule
