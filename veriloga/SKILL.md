@@ -37,6 +37,7 @@ real-world .va files plus a 171-module reference library (14,311 LOC).
 - **Category-specific patterns** → `references/categories/adc-sar.md`, `comparator.md`, etc.
 - **Project overrides** (naming, supply voltage, headers) → `references/customize.md`
 - **Domain classification help** → `references/domain-routing.md`
+- **EVAS-vs-Spectre parity gate for idt/idtmod decisions** → `references/evas-parity-gate.md`
 - **EVAS simulator support check** → `references/evas-capabilities.manifest`
 - **ADC behavioral verification** → `references/adc-testbench-guide.md` (runnable examples live under `../behavioral-va-eval/examples/`)
 - **Advanced syntax** (string parsing, current-domain functions, conditional compilation) → `references/verilog-a-advanced.md`
@@ -577,6 +578,30 @@ If fetched successfully, update the local cache.
 ```
 
 "Either" categories (DAC, PLL, Power/Switch) require code-level analysis.
+
+## idt/idtmod Policy (EVAS-first)
+
+For modules intended to be checked in both EVAS and Spectre:
+
+1. Generate EVAS-friendly model code first (event/discrete implementation)
+2. Run EVAS pre-check first; require functional dynamics before cross-simulator checks
+3. Run Spectre verification on the same stimulus and compare reports
+4. If mismatch exists, prioritize EVAS-side semantic fixes first
+5. EVAS fixes must not change EVAS matrix-solver core principles
+6. If repeated EVAS fixes are ineffective, then inspect model-code assumptions
+7. Enable `idt()` / `idtmod()` only when dual-simulator A/B evidence proves better consistency
+
+Mandatory flow:
+
+1. Build non-idt baseline model
+2. Run EVAS pre-check
+3. Run Spectre verification on identical testbench/stimulus
+4. If mismatch is above threshold, patch EVAS semantics and re-run
+5. After multiple ineffective EVAS patches, inspect model code
+6. Build idt/idtmod candidate only when justified
+7. Keep idt/idtmod only if mismatch metrics improve and lock behavior does not regress
+
+Use `references/evas-parity-gate.md` as the acceptance standard.
 
 ---
 

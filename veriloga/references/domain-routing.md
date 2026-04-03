@@ -22,6 +22,17 @@ Supported/unsupported constructs: read `evas-capabilities.manifest`.
 3. Edge detection uses `@(cross(...))` with explicit direction
 4. All state initialized in `@(initial_step)`
 
+### EVAS Parity Gate (before allowing idt/idtmod)
+
+For PLL/VCO-like modules that may request `idt()`/`idtmod()`:
+
+1. Build EVAS-friendly baseline first (no idt/idtmod)
+2. Build idt/idtmod candidate second
+3. Run both against Spectre on identical testbenches
+4. Keep idt/idtmod only if mismatch metrics improve materially and lock behavior does not regress
+
+Execution standard: `evas-parity-gate.md`.
+
 ### Invocation
 
 Check `customize.md` for `voltage_simulator_cmd`. If not configured, report
@@ -81,3 +92,6 @@ architectural exclusions** — EVAS will never add KCL solving.
 What may change:
 1. New `[supported]` constructs → update manifest
 2. CLI/runtime changes → update `voltage_simulator_cmd` and related examples in `customize.md`
+
+If local EVAS implementation status differs from the manifest for experimental operators,
+use parity-gate runtime evidence instead of parse success alone.

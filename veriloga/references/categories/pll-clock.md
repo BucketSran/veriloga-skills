@@ -15,6 +15,9 @@ Patterns for phase-locked loop building blocks: VCO, DCO, PFD, charge pump, freq
 
 ## VCO — Voltage-Controlled Oscillator
 
+For EVAS-first or EVAS+Spectre parity workflows, prefer a non-idt baseline first.
+Use `idtmod()` only after parity-gate A/B evidence (see `../evas-parity-gate.md`).
+
 The most common PLL block. Uses phase accumulation:
 
 ```
@@ -48,6 +51,50 @@ end
 - `$bound_step()` — forces max time-step so oscillation is sampled correctly
 - For square-wave output: `V(vout) <+ transition((phase < 0.5) ? vh : vl, ...)`
 - For noise: add `flicker_noise(Kf, exp, "vco_fn")` and `white_noise(Kw, "vco_wn")`
+
+## EVAS-friendly Alternative (No idtmod)
+
+Use timer-driven toggling with frequency updates in the event block:
+
+- For variable-period VCO/DCO/CPPLL clocks, prefer a single-argument absolute-time timer:
+  `@(timer(t_next))`
+- Do not use `@(timer(0.0, t_half))` with a time-varying `t_half` for oscillator scheduling.
+  In event-driven simulators this commonly schedules the next edge using the old period, so the
+  frequency update takes effect one edge late.
+
+```
+parameter real fo = 1.0e9;
+parameter real Kvco = 100.0e6;
+parameter real tedge = 10p;
+
+real vh, vl, vcm, inst_freq, t_next, t_half;
+integer state;
+
+analog begin
+    vh = V(VDD); vl = V(VSS); vcm = (vh + vl) / 2.0;
+
+    @(initial_step) begin
+        state = 0;
+        inst_freq = fo;
+        t_half = 0.5 / inst_freq;
+        t_next = $abstime + t_half;
+    end
+
+    @(timer(t_next)) begin
+        inst_freq = fo + Kvco * (V(vctr) - vcm);
+        if (inst_freq < 1.0) inst_freq = 1.0;
+        $bound_step(1.0 / (64.0 * inst_freq));
+        state = 1 - state;
+        t_half = 0.5 / inst_freq;
+        t_next = t_next + t_half;
+    end
+
+    V(vout) <+ vl + (vh - vl) * transition(state ? 1.0 : 0.0, 0, tedge, tedge);
+end
+```
+
+This pattern is usually easier to align between EVAS and Spectre than direct phase integration.
+It also avoids one-edge-late period application when the oscillation period changes over time.
 
 ## Frequency Divider
 
@@ -109,3 +156,5 @@ end
   for lock-in behavior
 - For DCO (digitally controlled oscillator): replace continuous `vctr` with a digital
   frequency word and discrete frequency steps
+- For variable-period oscillators, schedule the next edge with an explicit `t_next` state rather
+  than a two-argument periodic `timer(start, period)`
