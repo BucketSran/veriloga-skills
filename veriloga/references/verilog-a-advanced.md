@@ -102,6 +102,10 @@ I(IN, OUT) <+ V(sw) * transition(cond, 0, 10p);
 
 Sample or log at fixed time intervals.
 
+Use a single absolute-time state such as `next_sample` when the interval may change over time.
+Avoid `@(timer(start, period))` for variable-period scheduling, because the next trigger is often
+committed before the event body updates `period`.
+
 ```verilog
 real next_sample;
 
