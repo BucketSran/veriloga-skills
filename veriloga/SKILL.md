@@ -321,27 +321,30 @@ end
 
 Uninitialized variables default to 0 or garbage depending on simulator.
 
-**Rule 6 corollary — execution order:** EVAS compiles the analog block into two methods:
-`initial_step()` (fires first, at t=0) and `evaluate()` (fires second, then every timestep).
-Variables assigned in the bare `analog begin` block live in `evaluate()` and are still at their
-`__init__` default (0) when `initial_step()` runs. If `@(initial_step)` reads a variable that
-is computed in the bare block — e.g., via `$strobe` — it will print 0 even though the driven
-voltages are correct. Fix: compute the value inside `@(initial_step)` itself, or avoid reading
-bare-block variables from `@(initial_step)`.
+**Rule 6 corollary — startup style:** keep startup-dependent state explicit inside
+`@(initial_step)` even when simulators can see preceding analog assignments. Use it to seed PRBS,
+counters, lock streaks, and nonzero defaults. Avoid relying on ambiguous startup ordering when a
+single explicit initialization is clearer.
 
 ### Rule 7: Edge detection uses `@(cross())` with direction
 
 `+1` rising, `-1` falling. Omit direction only when both edges are needed.
 
-### Rule 8: Outputs use `transition()` — use `` `default_transition ``
+### Rule 8: Outputs use `transition()` — prefer a discrete target variable
 
 ```
 `default_transition 10p
-V(out_o) <+ transition(state ? vh : vl, 0);
+real out_target;
+out_target = state ? vh : vl;
+V(out_o) <+ transition(out_target, 0);
 ```
 
 **Pitfall:** Multiple `<+` to the same node *adds* contributions, not overwrites.
 Use a temporary variable and assign once.
+
+**Project style rule:** even if some simulators accept more compact expressions, benchmark gold and
+first-pass authored DUTs should prefer the explicit target-variable form above. It is easier to
+audit and keeps EVAS / Spectre authoring style aligned.
 
 ---
 
@@ -446,15 +449,23 @@ end
 ### Internal voltage nodes
 ```verilog
 voltage [15:0] shadow;
-V(shadow[i]) <+ transition(active ? 1 : 0, 0, 100p, 1p);
-V(OUT[i]) <+ transition((V(shadow[i]) > 0.5) ? vh : vl, 0);
+real shadow_target;
+real out_target;
+shadow_target = active ? 1.0 : 0.0;
+out_target = V(shadow[i]) > 0.5 ? vh : vl;
+V(shadow[i]) <+ transition(shadow_target, 0, 100p, 1p);
+V(OUT[i]) <+ transition(out_target, 0);
 ```
 
 ### `transition()` as intermediate variable
 ```verilog
+real clk_state;
 real clk_delayed;
-clk_delayed = transition(cond ? 1 : 0, 200p, 1p, 1p);
-V(CLKOUT) <+ transition((clk_delayed > 0.5) ? vh : vl, 0);
+real clkout_target;
+clk_state = cond ? 1.0 : 0.0;
+clk_delayed = transition(clk_state, 200p, 1p, 1p);
+clkout_target = clk_delayed > 0.5 ? vh : vl;
+V(CLKOUT) <+ transition(clkout_target, 0);
 ```
 
 ### `analog` single-line (no `begin/end`)
@@ -602,6 +613,44 @@ Mandatory flow:
 7. Keep idt/idtmod only if mismatch metrics improve and lock behavior does not regress
 
 Use `references/evas-parity-gate.md` as the acceptance standard.
+
+## Benchmark Authoring Notes
+
+These notes matter when the DUT you write will later become benchmark gold or will be evaluated in
+the `behavioral-veriloga-eval` pipeline.
+
+### Port discipline note
+
+Use one ANSI-inline `electrical` port per line. Do not rely on comma-sharing such as
+`inout electrical VDD, VSS`.
+
+### PRBS / LFSR note
+
+Initialize PRBS seeds to a nonzero state in `@(initial_step)`, for example:
+
+```verilog
+@(initial_step) begin
+    lfsr = 7'h01;
+end
+```
+
+### PLL parity note
+
+If a DUT will feed a PLL / clock benchmark, the benchmark metadata must use
+`"parity_policy": "pll_task_aware"`. The evaluation should compare lock / relock behavior,
+directional control pulses, and `vctrl` trends, not pointwise waveform error.
+
+### tb-generation handoff note
+
+When handing a DUT to a `tb-generation` task, the benchmark metadata should keep scoring to
+compile / execution gates only:
+
+```json
+{
+  "scoring": ["dut_compile", "tb_compile"],
+  "parity_policy": "not_required"
+}
+```
 
 ---
 

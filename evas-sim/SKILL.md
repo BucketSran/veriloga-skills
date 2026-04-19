@@ -252,6 +252,12 @@ Rules:
 | Analog input (ADC) | `vsource type=sine sinedc=... ampl=... freq=...` | set `sinedc` to mid-rail |
 | Ramp / step | `vsource type=pwl` | explicit time-value pairs |
 
+Spectre-safe PWL rule:
+
+- Prefer a single-line form when practical: `wave=[ 0 0 10n 0.9 20n 0.2 ]`
+- If the PWL list must span multiple lines, use explicit Spectre continuations on the source line and every intermediate line until the closing `]`
+- Always keep time/value tokens paired; odd-length token lists are treated as malformed
+
 #### 5. `simulatorOptions`
 Minimal recommended set for behavioural Verilog-A:
 ```spectre
