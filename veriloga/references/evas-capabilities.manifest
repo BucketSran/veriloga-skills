@@ -1,15 +1,16 @@
-# EVAS Capability Manifest — LOCAL CACHE
+# EVAS Capability Manifest
 #
-# This is a cached copy. The source of truth is in the EVAS repo:
-# https://github.com/Arcadia-1/EVAS/blob/main/evas-capabilities.manifest
+# Source of truth for what the EVAS voltage-domain simulator supports.
+# External skills (e.g., veriloga-skills) fetch this file to determine
+# domain classification and simulation routing.
 #
-# Sync priority (SKILL.md § Domain Classification):
-# 1. evas --capabilities (if CLI installed)
-# 2. https://raw.githubusercontent.com/Arcadia-1/EVAS/main/evas-capabilities.manifest
-# 3. This file (fallback)
+# EVAS is an event-driven voltage-domain simulator. It does NOT solve KCL
+# equations — current contributions and continuous-time analog operators
+# are permanent architectural exclusions.
 #
-# If fetched successfully, overwrite this file with the latest version.
-# last_synced: 2026-03-15
+# Format: one construct per line. Lines starting with # are comments.
+# Update [supported] when EVAS adds new constructs.
+# The [unsupported] list should not change.
 
 [supported]
 # --- Contributions ---
@@ -19,9 +20,13 @@ V(node1, node2) <+
 @(cross())
 @(above())
 @(initial_step)
+@(timer())
+@(final_step)
 # combined: @(event1 or event2)
 # --- Operators ---
 transition()
+slew()
+last_crossing()
 `default_transition
 # --- Variables & Parameters ---
 parameter (real, integer, string)
@@ -43,6 +48,13 @@ $strobe
 $random
 $dist_uniform()
 $rdist_normal()
+$temperature
+$vt
+$fopen()
+$fclose()
+$fstrobe()
+$fwrite()
+$fdisplay()
 # --- Math ---
 abs() sqrt() ln() log() exp() pow()
 sin() cos() floor() ceil() min() max()
@@ -51,6 +63,10 @@ sin() cos() floor() ceil() min() max()
 `define
 # --- Other ---
 from [a:b] (parameter ranges)
+
+[not_yet_implemented]
+# Parser supports these constructs but the runner does not yet act on them.
+subckt / ends (Spectre netlist hierarchy flattening)
 
 [unsupported]
 # These are PERMANENT architectural exclusions — EVAS is event-driven,
@@ -63,15 +79,8 @@ laplace_nd()
 laplace_zp()
 flicker_noise()
 white_noise()
-$temperature
-$vt
 KCL-based solving
-@(timer())
-@(final_step)
-$fopen / $fclose / $fstrobe
-last_crossing()
 analysis()
 branch
 nature / discipline (custom)
-slew()
 limexp()

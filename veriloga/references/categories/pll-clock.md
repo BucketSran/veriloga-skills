@@ -96,6 +96,108 @@ end
 This pattern is usually easier to align between EVAS and Spectre than direct phase integration.
 It also avoids one-edge-late period application when the oscillation period changes over time.
 
+## Closed-Loop PLL Repair Order
+
+When repairing a failing behavioral PLL, do not start by forcing the `lock`
+output.  Treat the loop as a staged mechanism and keep already-working stages
+intact.
+
+### Preserve The Verifier Interface
+
+Behavior repair must keep the public testbench interface stable.  If the
+Spectre harness passes parameters on the DUT instance, the Verilog-A module
+must declare those exact parameter names even when it also uses internal helper
+variables.
+
+Common PLL verifier parameters include:
+
+- `div_ratio`
+- `ratio_min`, `ratio_max`
+- `f_center`, `freq_step_hz`, `f_min`, `f_max`
+- `code_min`, `code_max`, `code_center`, `code_init`
+- `tedge`
+- `lock_tol`
+- `lock_count_target`
+
+It is fine to derive internal variables such as `ndiv`, `t_half`, `freq`, or
+`lock_threshold` from those public parameters, but do not replace the public
+parameter names with private-only names.  The repair may be behaviorally closer
+and still be rejected if the harness parameter interface is broken.
+
+### Stage 1: Feedback Edge Liveness
+
+If `ref_clk` has edges but `fb_clk` has none, the feedback generator is dead.
+Repair the oscillator/DCO and divider path first.
+
+- Use a held oscillator state plus an absolute `t_next` timer.
+- Initialize `t_next` in `@(initial_step)`.
+- In every `@(timer(t_next))` event, toggle the oscillator state and advance
+  `t_next` by a strictly positive half-period.
+- For CPPLL-style tasks, derive `fb_clk` from generated `dco_clk` edges through
+  a divider counter.
+- For ADPLL-style tasks without a separate `dco_clk`, the feedback output may
+  be the generated divided DCO clock.
+- Drive public clock pins from held states with unconditional `transition()`
+  contributions.
+
+### Stage 2: Feedback/Reference Ratio
+
+If feedback edges exist but the ratio is wrong, preserve edge liveness and
+repair cadence.
+
+- Keep one divider counter connected to oscillator/DCO edges.
+- Toggle or pulse `fb_clk` only from that counter.
+- Latch public ratio or hop controls on safe clock edges.
+- Be explicit about half-period versus full-period counting. If the DCO timer
+  fires on every half-cycle toggle and `fb_clk` toggles after `N` timer fires,
+  then one full `fb_clk` period is `2*N` timer intervals.
+- For ADPLL-style divided feedback, the common locked relation is
+  `f_dco ~= 2 * div_ratio * f_ref` when `fb_clk` toggles once per divider
+  count. If `div_ratio` changes without a matching nominal DCO frequency, the
+  late-window feedback/reference edge ratio will move high or low.
+- Choose `N` or the DCO period so late-window feedback and reference rising-edge
+  counts align. For a 50 MHz reference, `fb_clk` should have a near-20 ns
+  rising-edge period in the locked window.
+- Do not ignore public `f_center`, `freq_step_hz`, `f_min`, `f_max`, or
+  `div_ratio` and replace them with a fixed private oscillator.
+- Tune the nominal oscillator/DCO cadence and divider ratio so late-window
+  feedback and reference edge counts align.
+- Do not make `lock` pass while the ratio check is failing.
+
+### Stage 3: Control Movement
+
+If `vctrl_mon` or a control monitor is stuck, add a bounded loop-control state
+instead of a cosmetic waveform.
+
+- REF-leading error should move the control in the direction that speeds up the
+  feedback clock.
+- FB-leading error should move the control in the direction that slows down the
+  feedback clock.
+- A lightweight behavioral loop filter can accumulate bounded UP/DN corrections
+  into one real control variable.
+- Drive `vctrl_mon` from that same held control variable.
+- Use the same control variable to influence oscillator/DCO frequency so the
+  monitor movement is causally connected to feedback cadence.
+
+### Stage 4: Lock And Reacquire
+
+Assert `lock` only after earlier stages are plausible.
+
+- Maintain a stability counter over consecutive reference edges or comparison
+  windows with close reference/feedback cadence.
+- Use public `lock_tol` as a time or period tolerance and
+  `lock_count_target` as the required number of consecutive stable observations.
+- Treat `lock_count_target` as a lock-latency parameter, not a frequency-ratio
+  fix. Reducing it may assert lock earlier, but it does not repair a wrong
+  feedback cadence.
+- Do not use code-near-center as the only lock condition. The lock flag should
+  summarize observed ref/fb timing stability.
+- Assert `lock` after the stable count reaches the required window.
+- Clear or lower `lock` after reset, ratio hop, or a large frequency step.
+- For reacquire tasks, allow lock to drop during the disturbance and assert
+  again only after the post-step ratio restabilizes.
+- Never use a constant-high `lock` flag to hide a dead feedback path.
+
 ## Frequency Divider
 
 ```
@@ -123,6 +225,61 @@ analog begin
     end
 
     V(clk_out) <+ transition(out_state ? vh : vl, 0, tedge, tedge);
+end
+```
+
+## Bang-Bang Data/Clock Phase Detector
+
+An Alexander-style or bang-bang data-edge detector compares the timing of data
+edges against nearby clock edges.  The data input is not just a static logic
+value: recent edge time determines whether UP or DN should pulse.
+
+Repair order:
+
+- Capture data-edge and clock-edge times in held real variables.
+- If a data edge leads the clock edge inside the valid timing window, emit a
+  bounded UP pulse.
+- If a data edge lags the clock edge, emit a bounded DN pulse.
+- Clear pulses after a finite pulse width so UP and DN remain mostly
+  non-overlapping.
+- Retimed data should update on clock edges from the sampled data level.
+
+```
+real last_data_edge, last_clk_edge;
+real up_clear_t, dn_clear_t;
+integer up_q, dn_q, data_q, retimed_q;
+
+analog begin
+    @(initial_step) begin
+        last_data_edge = -1.0;
+        last_clk_edge = -1.0;
+        up_q = 0; dn_q = 0; retimed_q = 0;
+    end
+
+    @(cross(V(data) - vth, +1)) begin
+        last_data_edge = $abstime;
+        data_q = 1;
+        if (last_clk_edge >= 0.0 && ($abstime - last_clk_edge) < edge_window) begin
+            dn_q = 1;
+            dn_clear_t = $abstime + pulse_width;
+        end
+    end
+
+    @(cross(V(clk) - vth, +1)) begin
+        last_clk_edge = $abstime;
+        retimed_q = data_q;
+        if (last_data_edge >= 0.0 && ($abstime - last_data_edge) < edge_window) begin
+            up_q = 1;
+            up_clear_t = $abstime + pulse_width;
+        end
+    end
+
+    @(timer(up_clear_t)) up_q = 0;
+    @(timer(dn_clear_t)) dn_q = 0;
+
+    V(up) <+ transition(up_q ? vh : vl, 0, tedge, tedge);
+    V(dn) <+ transition(dn_q ? vh : vl, 0, tedge, tedge);
+    V(retimed_data) <+ transition(retimed_q ? vh : vl, 0, tedge, tedge);
 end
 ```
 

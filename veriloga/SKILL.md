@@ -343,6 +343,43 @@ V(out_o) <+ transition(state ? vh : vl, 0);
 **Pitfall:** Multiple `<+` to the same node *adds* contributions, not overwrites.
 Use a temporary variable and assign once.
 
+**Project style rule:** even if some simulators accept more compact expressions, benchmark gold and
+first-pass authored DUTs should prefer the explicit target-variable form above. It is easier to
+audit and keeps EVAS / Spectre authoring style aligned.
+
+**Multi-output corollary — target-buffer pattern:** for multiple transition-driven
+outputs, do not put `transition()` inside `if`/`case`/runtime `for` branches.
+Declare one target per output, or a `real target[0:N-1]` array. Update only those
+targets inside events and conditions. Put the electrical contributions at analog
+top level:
+
+```verilog
+real out_t[0:3];
+integer j;
+genvar k;
+
+analog begin
+    @(initial_step) begin
+        for (j = 0; j < 4; j = j + 1) out_t[j] = vlo;
+    end
+
+    @(cross(V(clk) - vth, +1)) begin
+        out_t[0] = state0 ? vhi : vlo;
+        out_t[1] = state1 ? vhi : vlo;
+        out_t[2] = state2 ? vhi : vlo;
+        out_t[3] = state3 ? vhi : vlo;
+    end
+
+    for (k = 0; k < 4; k = k + 1) begin
+        V(out[k]) <+ transition(out_t[k], 0, tr, tf);
+    end
+end
+```
+
+If a simulator or benchmark port style makes `genvar` inconvenient, explicitly
+unroll the contribution lines. The important rule is that the `transition()`
+contributions are unconditional and outside runtime `integer` loops.
+
 ---
 
 ## Category Index
